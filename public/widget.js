@@ -101,7 +101,7 @@
     messages.appendChild(loadingDiv);
     
     try {
-      const res = await fetch('http://localhost:3000/api/chat', {
+      const res = await fetch('https://chat-widget-2kfiv5u2m-abdulgeniabdulaziz-6073s-projects.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })

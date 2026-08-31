@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run build:widget",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:widget": "node scripts/build-widget.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
@@ -18,13 +19,18 @@
     "pdf-parse": "^2.4.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "ioredis": "^5.4.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.5.12",
+    "@types/jsonwebtoken": "^9.0.7",
+    "esbuild": "^0.24.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

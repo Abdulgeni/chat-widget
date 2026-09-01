@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { ChatTransport } from './transport';
 
 interface Message {
   id: string;
@@ -9,57 +10,54 @@ interface Message {
 
 interface ChatAppProps {
   theme?: { primaryColor?: string };
+  apiOrigin: string;
 }
 
-function mockAiReply(userText: string): Promise<string> {
-  // Placeholder for Loop 4, which replaces this with a real streamed
-  // response from the backend.
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`You said: "${userText}". Real AI replies arrive in Loop 4.`);
-    }, 900);
-  });
-}
-
-export default function ChatApp({ theme }: ChatAppProps) {
+export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'welcome', role: 'assistant', text: 'Hi! How can I help you today?' },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const transportRef = useRef<ChatTransport | null>(null);
+  const sessionIdRef = useRef<string>(crypto.randomUUID());
+
+  useEffect(() => {
+    const transport = new ChatTransport(apiOrigin, sessionIdRef.current, (msg) => {
+      if (msg.type === 'ack') {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m))
+        );
+        return;
+      }
+      if (msg.type === 'message' && msg.payload?.role === 'assistant') {
+        setIsTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          { id: msg.payload.id, role: 'assistant', text: msg.payload.text },
+        ]);
+      }
+    });
+    transport.connect();
+    transportRef.current = transport;
+    return () => transport.close();
+  }, [apiOrigin]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, isTyping]);
 
-  async function handleSend(text?: string) {
-    const content = (text ?? input).trim();
+  async function handleSend() {
+    const content = input.trim();
     if (!content) return;
 
-    const userMsg: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      text: content,
-      status: 'sending',
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    const id = crypto.randomUUID();
+    setMessages((prev) => [...prev, { id, role: 'user', text: content, status: 'sending' }]);
     setInput('');
-
-    // Optimistic UI: mark as sent almost immediately (real ack comes in Loop 3).
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'sent' } : m))
-      );
-    }, 150);
-
     setIsTyping(true);
-    const reply = await mockAiReply(content);
-    setIsTyping(false);
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: 'assistant', text: reply },
-    ]);
+
+    await transportRef.current?.send(content, id);
   }
 
   const primary = theme?.primaryColor || '#4f46e5';

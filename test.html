@@ -1,9 +1,119 @@
 <!DOCTYPE html>
-<html>
-<head><title>Widget Test</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Widget Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .feature-list {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .feature-list li {
+            margin: 10px 0;
+            color: #4b5563;
+        }
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .test-button:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .code-block {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
 <body>
-  <h1>Test Page</h1>
-  <p>The chat widget should appear in the bottom-right.</p>
-  <script src="https://chat-widget-2kfiv5u2m-abdulgeniabdulaziz-6073s-projects.vercel.app/widget.js" data-color="#2563eb" data-title="AI Support"></script>
+    <div class="container">
+        <h1>🚀 AI Chat Widget Test Page</h1>
+        <p>This page demonstrates the professional embeddable chat widget with Shadow DOM isolation.</p>
+        
+        <div class="feature-list">
+            <h3>Features:</h3>
+            <ul>
+                <li>✅ Shadow DOM - No CSS conflicts with host page</li>
+                <li>✅ Lazy loading - Widget loads asynchronously</li>
+                <li>✅ Session persistence - Conversations saved in localStorage</li>
+                <li>✅ Typing indicators - Smooth UX</li>
+                <li>✅ Quick replies - Interactive suggestions</li>
+                <li>✅ Programmatic control - Open/close/send via JavaScript</li>
+            </ul>
+        </div>
+
+        <h3>Test Programmatic Control:</h3>
+        <button class="test-button" onclick="openWidget()">Open Widget</button>
+        <button class="test-button" onclick="sendTestMessage()">Send Test Message</button>
+        
+        <h3>Embed Code:</h3>
+        <div class="code-block">
+            &lt;script src="http://localhost:3000/widget.js" 
+                    data-color="#2563eb" 
+                    data-title="AI Support"&gt;&lt;/script&gt;
+        </div>
+    </div>
+
+          <!-- Widget Embed -->
+    <script>
+    (function(w,d,s,o,f,js,fjs){
+        w['ChatWidgetObject']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
+        js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
+    }(window,document,'script','aiChat','http://localhost:3000/widget.js'));
+    aiChat('init', {
+        appId: 'test-app',
+        theme: { primaryColor: '#2563eb' }
+    });
+    </script>
+
+    <script>
+        function openWidget() {
+            aiChat('open');
+        }
+
+        function sendTestMessage() {
+            aiChat('sendMessage', 'What are your business hours?');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ Test page loaded');
+        });
+    </script>
 </body>
 </html>

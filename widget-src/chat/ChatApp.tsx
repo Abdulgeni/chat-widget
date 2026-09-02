@@ -21,8 +21,28 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const transportRef = useRef<ChatTransport | null>(null);
-  const sessionIdRef = useRef<string>(crypto.randomUUID());
-
+ const sessionIdRef = useRef<string>(
+  (typeof localStorage !== 'undefined' && localStorage.getItem('aiChatSessionId')) ||
+    (() => {
+      const id = crypto.randomUUID();
+      localStorage.setItem('aiChatSessionId', id);
+      return id;
+    })()
+);
+      useEffect(() => {
+    fetch(`${apiOrigin}/api/history?sessionId=${sessionIdRef.current}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.messages?.length) {
+          setMessages(
+            data.messages.map((m: any) => ({ id: m.id, role: m.role, text: m.text }))
+          );
+        }
+      })
+      .catch(() => {
+        // No history yet, or history fetch failed — keep the default welcome message.
+      });
+  }, [apiOrigin]);
     useEffect(() => {
     const transport = new ChatTransport(apiOrigin, sessionIdRef.current, (msg) => {
       if (msg.type === 'ack') {

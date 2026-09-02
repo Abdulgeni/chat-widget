@@ -18,8 +18,7 @@ export class ChatTransport {
   }
 
   connect() {
-    const wsUrl = this.apiOrigin.replace(/^http/, 'ws') + '/api/ws';
-    try {
+   const wsUrl = this.apiOrigin.replace(/^http/, 'ws') + '/api/ws?sessionId=' + encodeURIComponent(this.sessionId); try {
       this.ws = new WebSocket(wsUrl);
     } catch {
       this.fallbackToSSE();

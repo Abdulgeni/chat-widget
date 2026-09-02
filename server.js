@@ -6,6 +6,12 @@ import { createServer } from 'node:http';
 import { parse } from 'node:url';
 import next from 'next';
 import { WebSocketServer } from 'ws';
+import { randomUUID } from 'node:crypto';
+
+
+function randomUUIDFallback() {
+  return randomUUID();
+}
 
 const { registerConnection, removeConnection, handleIncoming, heartbeatSweep } =
   await import('./lib/ws/connectionManager.mjs');
@@ -38,8 +44,8 @@ app.prepare().then(() => {
 
   const wss = new WebSocketServer({ noServer: true });
 
-  server.on('upgrade', (req, socket, head) => {
-    const { pathname } = parse(req.url);
+    server.on('upgrade', (req, socket, head) => {
+    const { pathname } = parse(req.url, true);
     if (pathname === '/api/ws') {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
@@ -49,8 +55,10 @@ app.prepare().then(() => {
     }
   });
 
-  wss.on('connection', (ws) => {
-    const sessionId = registerConnection(ws);
+  wss.on('connection', (ws, req) => {
+    const { query } = parse(req.url, true);
+    const sessionId = query.sessionId || randomUUIDFallback();
+    registerConnection(ws, sessionId);
     ws.on('message', (raw) => handleIncoming(sessionId, ws, raw));
     ws.on('close', () => removeConnection(sessionId));
   });

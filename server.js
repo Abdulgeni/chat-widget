@@ -1,18 +1,19 @@
+import pkg from '@next/env';
+const { loadEnvConfig } = pkg;
+loadEnvConfig(process.cwd());
+
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
 import next from 'next';
 import { WebSocketServer } from 'ws';
-import {
-  registerConnection,
-  removeConnection,
-  handleIncoming,
-  heartbeatSweep,
-} from './lib/ws/connectionManager.mjs';
+
+const { registerConnection, removeConnection, handleIncoming, heartbeatSweep } =
+  await import('./lib/ws/connectionManager.mjs');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT || 3000);
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
@@ -20,13 +21,26 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
+  server.on('error', (err) => {
+    if (err.code === 'EACCES') {
+      console.error(
+        `Port ${port} is blocked or requires elevated access. Try a different port, for example: PORT=3001 npm run dev`
+      );
+    } else if (err.code === 'EADDRINUSE') {
+      console.error(
+        `Port ${port} is already in use. Stop the other process or run with a different port, for example: PORT=3001 npm run dev`
+      );
+    } else {
+      console.error('Server startup error:', err);
+    }
+    process.exit(1);
+  });
+
   const wss = new WebSocketServer({ noServer: true });
 
   server.on('upgrade', (req, socket, head) => {
     const { pathname } = parse(req.url);
     if (pathname === '/api/ws') {
-      // NOTE: Origin allowlisting per-appId arrives in Loop 6.
-      // For now this accepts any origin, matching Loop 1-5 scope.
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
       });
@@ -41,10 +55,9 @@ app.prepare().then(() => {
     ws.on('close', () => removeConnection(sessionId));
   });
 
-  // Heartbeat sweep every 30s: pings clients, drops dead connections.
   setInterval(heartbeatSweep, 30000);
 
-  server.listen(port, () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(`> Ready on http://localhost:${port}`);
   });
 });

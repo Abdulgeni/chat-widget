@@ -23,7 +23,7 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
   const transportRef = useRef<ChatTransport | null>(null);
   const sessionIdRef = useRef<string>(crypto.randomUUID());
 
-  useEffect(() => {
+    useEffect(() => {
     const transport = new ChatTransport(apiOrigin, sessionIdRef.current, (msg) => {
       if (msg.type === 'ack') {
         setMessages((prev) =>
@@ -31,12 +31,25 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
         );
         return;
       }
-      if (msg.type === 'message' && msg.payload?.role === 'assistant') {
+      if (msg.type === 'stream_start') {
+        setIsTyping(true);
+        setMessages((prev) => [...prev, { id: msg.payload.id, role: 'assistant', text: '' }]);
+        return;
+      }
+      if (msg.type === 'stream_chunk') {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msg.payload.id ? { ...m, text: m.text + msg.payload.delta } : m))
+        );
+        return;
+      }
+      if (msg.type === 'stream_end') {
         setIsTyping(false);
-        setMessages((prev) => [
-          ...prev,
-          { id: msg.payload.id, role: 'assistant', text: msg.payload.text },
-        ]);
+        return;
+      }
+      if (msg.type === 'message' && msg.payload?.role === 'assistant') {
+        // POST fallback path — arrives as one complete message, no streaming.
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { id: msg.payload.id, role: 'assistant', text: msg.payload.text }]);
       }
     });
     transport.connect();

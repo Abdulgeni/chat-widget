@@ -11,14 +11,19 @@ export class ChatTransport {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private connectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(apiOrigin: string, sessionId: string, onMessage: IncomingHandler) {
+    private appId: string;
+
+  constructor(apiOrigin: string, sessionId: string, appId: string, onMessage: IncomingHandler) {
     this.apiOrigin = apiOrigin;
     this.sessionId = sessionId;
+    this.appId = appId;
     this.onMessage = onMessage;
   }
-
   connect() {
-   const wsUrl = this.apiOrigin.replace(/^http/, 'ws') + '/api/ws?sessionId=' + encodeURIComponent(this.sessionId); try {
+   const wsUrl =
+  this.apiOrigin.replace(/^http/, 'ws') +
+  '/api/ws?sessionId=' + encodeURIComponent(this.sessionId) +
+  '&appId=' + encodeURIComponent(this.appId); try {
       this.ws = new WebSocket(wsUrl);
     } catch {
       this.fallbackToSSE();

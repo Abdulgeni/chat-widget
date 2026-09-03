@@ -7,6 +7,8 @@ import { parse } from 'node:url';
 import next from 'next';
 import { WebSocketServer } from 'ws';
 import { randomUUID } from 'node:crypto';
+import { getWidgetConfig } from './lib/db/db.mjs';
+import { verifyJwt } from './lib/security/jwt.mjs';
 
 
 function randomUUIDFallback() {
@@ -44,20 +46,37 @@ app.prepare().then(() => {
 
   const wss = new WebSocketServer({ noServer: true });
 
-    server.on('upgrade', (req, socket, head) => {
-    const { pathname } = parse(req.url, true);
-    if (pathname === '/api/ws') {
-      wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit('connection', ws, req);
-      });
-    } else {
+      server.on('upgrade', (req, socket, head) => {
+    const { pathname, query } = parse(req.url, true);
+    if (pathname !== '/api/ws') {
       socket.destroy();
+      return;
     }
+
+    const appId = query.appId || '';
+    const config = appId ? getWidgetConfig(appId) : null;
+    const origin = req.headers.origin || '';
+
+    if (config && !config.allowedDomains.includes('*') && !config.allowedDomains.includes(origin)) {
+      console.warn(`[security] rejected WS connection: origin "${origin}" not allowed for appId "${appId}"`);
+      socket.destroy();
+      return;
+    }
+
+    if (query.jwt && !verifyJwt(query.jwt)) {
+      console.warn('[security] rejected WS connection: invalid JWT');
+      socket.destroy();
+      return;
+    }
+
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
   });
 
   wss.on('connection', (ws, req) => {
     const { query } = parse(req.url, true);
-    const sessionId = query.sessionId || randomUUIDFallback();
+    const sessionId = query.sessionId || randomUUID();
     registerConnection(ws, sessionId);
     ws.on('message', (raw) => handleIncoming(sessionId, ws, raw));
     ws.on('close', () => removeConnection(sessionId));

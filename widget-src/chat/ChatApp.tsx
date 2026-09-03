@@ -11,9 +11,10 @@ interface Message {
 interface ChatAppProps {
   theme?: { primaryColor?: string };
   apiOrigin: string;
+  appId?: string;
 }
 
-export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
+export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'welcome', role: 'assistant', text: 'Hi! How can I help you today?' },
   ]);
@@ -21,15 +22,16 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const transportRef = useRef<ChatTransport | null>(null);
- const sessionIdRef = useRef<string>(
-  (typeof localStorage !== 'undefined' && localStorage.getItem('aiChatSessionId')) ||
-    (() => {
-      const id = crypto.randomUUID();
-      localStorage.setItem('aiChatSessionId', id);
-      return id;
-    })()
-);
-      useEffect(() => {
+  const sessionIdRef = useRef<string>(
+    (typeof localStorage !== 'undefined' && localStorage.getItem('aiChatSessionId')) ||
+      (() => {
+        const id = crypto.randomUUID();
+        localStorage.setItem('aiChatSessionId', id);
+        return id;
+      })()
+  );
+
+  useEffect(() => {
     fetch(`${apiOrigin}/api/history?sessionId=${sessionIdRef.current}`)
       .then((res) => res.json())
       .then((data) => {
@@ -43,8 +45,9 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
         // No history yet, or history fetch failed — keep the default welcome message.
       });
   }, [apiOrigin]);
-    useEffect(() => {
-    const transport = new ChatTransport(apiOrigin, sessionIdRef.current, (msg) => {
+
+  useEffect(() => {
+    const transport = new ChatTransport(apiOrigin, sessionIdRef.current, appId || '', (msg) => {
       if (msg.type === 'ack') {
         setMessages((prev) =>
           prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m))
@@ -75,7 +78,7 @@ export default function ChatApp({ theme, apiOrigin }: ChatAppProps) {
     transport.connect();
     transportRef.current = transport;
     return () => transport.close();
-  }, [apiOrigin]);
+  }, [apiOrigin, appId]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });

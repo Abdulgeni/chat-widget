@@ -24,7 +24,7 @@ export function mountChat(container: HTMLElement, shadow: ShadowRoot, config: Mo
   shadow.appendChild(styleTag);
 
   root = createRoot(container);
-  root.render(<ChatApp theme={config.theme} apiOrigin={config.apiOrigin || ''} />);
+  root.render(<ChatApp theme={config.theme} apiOrigin={config.apiOrigin || ''} appId={config.appId} />);
 
   container.style.display = 'none'; // start closed; opened via toggle/dispatch
 }

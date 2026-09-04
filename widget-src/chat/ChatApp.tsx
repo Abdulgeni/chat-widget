@@ -6,6 +6,7 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   status?: 'sending' | 'sent';
+  time: number;
 }
 
 interface ChatAppProps {
@@ -14,9 +15,13 @@ interface ChatAppProps {
   appId?: string;
 }
 
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'welcome', role: 'assistant', text: 'Hi! How can I help you today?' },
+    { id: 'welcome', role: 'assistant', text: 'Hi! How can I help you today?', time: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -37,42 +42,56 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
       .then((data) => {
         if (data.messages?.length) {
           setMessages(
-            data.messages.map((m: any) => ({ id: m.id, role: m.role, text: m.text }))
+            data.messages.map((m: any) => ({
+              id: m.id,
+              role: m.role,
+              text: m.text,
+              time: m.created_at || Date.now(),
+            }))
           );
         }
       })
-      .catch(() => {
-        // No history yet, or history fetch failed — keep the default welcome message.
-      });
+      .catch(() => {});
   }, [apiOrigin]);
 
   useEffect(() => {
     const transport = new ChatTransport(apiOrigin, sessionIdRef.current, appId || '', (msg) => {
-      if (msg.type === 'ack') {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m))
-        );
-        return;
-      }
-      if (msg.type === 'stream_start') {
-        setIsTyping(true);
-        setMessages((prev) => [...prev, { id: msg.payload.id, role: 'assistant', text: '' }]);
-        return;
-      }
-      if (msg.type === 'stream_chunk') {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === msg.payload.id ? { ...m, text: m.text + msg.payload.delta } : m))
-        );
-        return;
-      }
-      if (msg.type === 'stream_end') {
+      try {
+        if (msg.type === 'ack') {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m))
+          );
+          return;
+        }
+        if (msg.type === 'stream_start') {
+          setIsTyping(true);
+          setMessages((prev) => [
+            ...prev,
+            { id: msg.payload.id, role: 'assistant', text: '', time: Date.now() },
+          ]);
+          return;
+        }
+        if (msg.type === 'stream_chunk') {
+          const delta = typeof msg.payload?.delta === 'string' ? msg.payload.delta : '';
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msg.payload?.id ? { ...m, text: m.text + delta } : m))
+          );
+          return;
+        }
+        if (msg.type === 'stream_end') {
+          setIsTyping(false);
+          return;
+        }
+        if (msg.type === 'message' && msg.payload?.role === 'assistant') {
+          setIsTyping(false);
+          setMessages((prev) => [
+            ...prev,
+            { id: msg.payload.id, role: 'assistant', text: String(msg.payload.text ?? ''), time: Date.now() },
+          ]);
+        }
+      } catch (err) {
+        console.error('[ai-chat-widget] failed to handle message:', err, msg);
         setIsTyping(false);
-        return;
-      }
-      if (msg.type === 'message' && msg.payload?.role === 'assistant') {
-        // POST fallback path — arrives as one complete message, no streaming.
-        setIsTyping(false);
-        setMessages((prev) => [...prev, { id: msg.payload.id, role: 'assistant', text: msg.payload.text }]);
       }
     });
     transport.connect();
@@ -89,11 +108,16 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
     if (!content) return;
 
     const id = crypto.randomUUID();
-    setMessages((prev) => [...prev, { id, role: 'user', text: content, status: 'sending' }]);
+    setMessages((prev) => [...prev, { id, role: 'user', text: content, status: 'sending', time: Date.now() }]);
     setInput('');
     setIsTyping(true);
 
-    await transportRef.current?.send(content, id);
+    try {
+      await transportRef.current?.send(content, id);
+    } catch (err) {
+      console.error('[ai-chat-widget] send failed:', err);
+      setIsTyping(false);
+    }
   }
 
   const primary = theme?.primaryColor || '#4f46e5';
@@ -108,8 +132,12 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
         {messages.map((m) => (
           <div key={m.id} className={`bubble-row ${m.role}`}>
             <div className={`bubble ${m.role}`} style={m.role === 'user' ? { background: primary } : undefined}>
-              {m.text}
-              {m.status === 'sending' && <span className="status-dot" aria-label="sending" />}
+              <div className="bubble-text">{m.text}</div>
+              <div className="msg-meta">
+                <span className="msg-time">{formatTime(m.time)}</span>
+                {m.status === 'sending' && <span className="status-dot" aria-label="sending" />}
+                {m.status === 'sent' && <span className="status-check" aria-label="sent">✓</span>}
+              </div>
             </div>
           </div>
         ))}
@@ -122,24 +150,29 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
         )}
       </div>
 
-      <form
-        className="chat-input-row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-      >
+      <div className="chat-input-row">
         <input
           className="chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder="Type a message…"
           aria-label="Message"
         />
-        <button className="chat-send" type="submit" style={{ background: primary }}>
+        <button
+          className="chat-send"
+          type="button"
+          onClick={handleSend}
+          style={{ background: primary }}
+        >
           Send
         </button>
-      </form>
+      </div>
     </div>
   );
 }

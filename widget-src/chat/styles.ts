@@ -46,6 +46,7 @@ export const chatStyles = `
     background: rgba(255,255,255,.7);
     margin-left: 6px;
   }
+  .status-check { font-size: 11px; opacity: .8; }
   .bubble.typing { display: flex; gap: 4px; padding: 12px; }
   .bubble.typing span {
     width: 6px; height: 6px; border-radius: 50%;
@@ -58,6 +59,16 @@ export const chatStyles = `
     0%, 60%, 100% { transform: translateY(0); opacity: .5; }
     30% { transform: translateY(-4px); opacity: 1; }
   }
+    .bubble-text { white-space: pre-wrap; }
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .msg-time { font-size: 10px; opacity: .6; }
+  .status-check { font-size: 10px; opacity: .8; }
   .chat-input-row {
     display: flex;
     gap: 8px;

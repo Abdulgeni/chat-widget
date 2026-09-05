@@ -93,4 +93,21 @@ export const chatStyles = `
     font-size: 14px;
     cursor: pointer;
   }
-`;
+      .quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .quick-reply-btn {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #374151;
+  }
+  .quick-reply-btn:hover { background: #f3f4f6; }
+  .attach-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; cursor: pointer; font-size: 16px;
+    border-radius: 8px;
+  }
+  .attach-btn:hover { background: #f3f4f6; }
+  `;

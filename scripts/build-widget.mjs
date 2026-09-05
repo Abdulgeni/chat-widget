@@ -7,7 +7,7 @@ const targets = [
   {
     in: 'widget-src/chat/entry.tsx',
     out: 'public/widget-chunk.js',
-    budgetKB: 150, // React + chat UI; generous budget since it's lazy-loaded
+    budgetKB: 220, // React + chat UI; generous budget since it's lazy-loaded
     jsx: true,
   },
 ];

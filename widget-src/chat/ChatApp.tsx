@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatTransport } from './transport';
+import { TabSync } from './tabSync';
 
 interface Message {
   id: string;
@@ -7,6 +8,7 @@ interface Message {
   text: string;
   status?: 'sending' | 'sent';
   time: number;
+  quickReplies?: string[];
 }
 
 interface ChatAppProps {
@@ -30,12 +32,19 @@ function formatTime(ts: number) {
 
 export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'welcome', role: 'assistant', text: 'Hi! How can I help you today?', time: Date.now() },
+    {
+      id: 'welcome',
+      role: 'assistant',
+      text: 'Hi! How can I help you today?',
+      time: Date.now(),
+      quickReplies: ['What can you do?', 'Upload a document', 'Talk to support'],
+    },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const transportRef = useRef<ChatTransport | null>(null);
+  const tabSyncRef = useRef<TabSync | null>(null);
   const sessionIdRef = useRef<string>(
     (typeof localStorage !== 'undefined' && localStorage.getItem('aiChatSessionId')) ||
       (() => {
@@ -64,20 +73,19 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   }, [apiOrigin]);
 
   useEffect(() => {
-    const transport = new ChatTransport(apiOrigin, sessionIdRef.current, appId || '', (msg) => {
+    const tabSync = new TabSync(sessionIdRef.current);
+    tabSyncRef.current = tabSync;
+    const isLeader = tabSync.claimLeadership();
+
+    const handleIncoming = (msg: any) => {
       try {
         if (msg.type === 'ack') {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m))
-          );
+          setMessages((prev) => prev.map((m) => (m.id === msg.payload?.id ? { ...m, status: 'sent' } : m)));
           return;
         }
         if (msg.type === 'stream_start') {
           setIsTyping(true);
-          setMessages((prev) => [
-            ...prev,
-            { id: msg.payload.id, role: 'assistant', text: '', time: Date.now() },
-          ]);
+          setMessages((prev) => [...prev, { id: msg.payload.id, role: 'assistant', text: '', time: Date.now() }]);
           return;
         }
         if (msg.type === 'stream_chunk') {
@@ -102,18 +110,35 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
         console.error('[ai-chat-widget] failed to handle message:', err, msg);
         setIsTyping(false);
       }
-    });
-    transport.connect();
-    transportRef.current = transport;
-    return () => transport.close();
+    };
+
+    if (isLeader) {
+      // This tab owns the real connection. Broadcast every incoming
+      // frame to any other open tabs too.
+      const transport = new ChatTransport(apiOrigin, sessionIdRef.current, appId || '', (msg) => {
+        handleIncoming(msg);
+        tabSync.broadcastIncoming(msg);
+      });
+      transport.connect();
+      transportRef.current = transport;
+      tabSync.onOutgoingRequest = (text, id) => transport.send(text, id);
+    } else {
+      // Follower tab: no socket of its own, just listens for broadcasts.
+      tabSync.onIncoming = handleIncoming;
+    }
+
+    return () => {
+      transportRef.current?.close();
+      tabSync.close();
+    };
   }, [apiOrigin, appId]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, isTyping]);
 
-  async function handleSend() {
-    const content = input.trim();
+  async function handleSend(override?: string) {
+    const content = (override ?? input).trim();
     if (!content) return;
 
     const id = crypto.randomUUID();
@@ -122,10 +147,46 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
     setIsTyping(true);
 
     try {
-      await transportRef.current?.send(content, id);
+      if (tabSyncRef.current?.leader) {
+        await transportRef.current?.send(content, id);
+      } else {
+        tabSyncRef.current?.requestSend(content, id);
+      }
     } catch (err) {
       console.error('[ai-chat-widget] send failed:', err);
       setIsTyping(false);
+    }
+  }
+
+  async function handleFileUpload(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('sessionId', sessionIdRef.current);
+
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: 'user', text: `📎 Uploaded: ${file.name}`, time: Date.now() },
+    ]);
+
+    try {
+      const res = await fetch(`${apiOrigin}/api/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          text: data.ok
+            ? `Got it — I've read "${file.name}" (${data.chunks} sections). Ask me anything about it.`
+            : `Sorry, I couldn't process that file: ${data.error || 'unknown error'}`,
+          time: Date.now(),
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', text: 'Upload failed — please try again.', time: Date.now() },
+      ]);
     }
   }
 
@@ -142,6 +203,15 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
           <div key={m.id} className={`bubble-row ${m.role}`}>
             <div className={`bubble ${m.role}`} style={m.role === 'user' ? { background: primary } : undefined}>
               <div className="bubble-text">{m.text}</div>
+              {m.quickReplies && m.quickReplies.length > 0 && (
+                <div className="quick-replies">
+                  {m.quickReplies.map((qr) => (
+                    <button key={qr} className="quick-reply-btn" onClick={() => handleSend(qr)}>
+                      {qr}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="msg-meta">
                 <span className="msg-time">{formatTime(m.time)}</span>
                 {m.status === 'sending' && <span className="status-dot" aria-label="sending" />}
@@ -160,6 +230,19 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
       </div>
 
       <div className="chat-input-row">
+        <label className="attach-btn" title="Attach a PDF">
+          📎
+          <input
+            type="file"
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file);
+              e.target.value = '';
+            }}
+          />
+        </label>
         <input
           className="chat-input"
           value={input}
@@ -173,12 +256,7 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
           placeholder="Type a message…"
           aria-label="Message"
         />
-        <button
-          className="chat-send"
-          type="button"
-          onClick={handleSend}
-          style={{ background: primary }}
-        >
+        <button className="chat-send" type="button" onClick={() => handleSend()} style={{ background: primary }}>
           Send
         </button>
       </div>

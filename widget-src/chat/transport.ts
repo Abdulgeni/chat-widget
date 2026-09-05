@@ -106,8 +106,7 @@ export class ChatTransport {
     const res = await fetch(`${this.apiOrigin}/api/message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, sessionId: this.sessionId }),
-    });
+    body: JSON.stringify({ text, sessionId: this.sessionId, appId: this.appId }),});
     this.onMessage(await res.json());
   }
 

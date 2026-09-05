@@ -74,10 +74,11 @@ app.prepare().then(() => {
     });
   });
 
-  wss.on('connection', (ws, req) => {
+    wss.on('connection', (ws, req) => {
     const { query } = parse(req.url, true);
     const sessionId = query.sessionId || randomUUID();
-    registerConnection(ws, sessionId);
+    const ip = req.socket.remoteAddress || 'unknown';
+    registerConnection(ws, sessionId, ip);
     ws.on('message', (raw) => handleIncoming(sessionId, ws, raw));
     ws.on('close', () => removeConnection(sessionId));
   });

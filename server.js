@@ -1,7 +1,12 @@
 import pkg from '@next/env';
 const { loadEnvConfig } = pkg;
 loadEnvConfig(process.cwd());
+import { logger } from './lib/logger.mjs';
+import { initSentry } from './lib/monitoring/sentry.mjs';
 
+initSentry();
+
+import { purgeOldData } from './lib/db/db.mjs';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
 import next from 'next';
@@ -84,8 +89,12 @@ app.prepare().then(() => {
   });
 
   setInterval(heartbeatSweep, 30000);
+  setInterval(() => {
+  const result = purgeOldData(30);
+  logger.info(result, 'daily data retention purge complete');
+}, 24 * 60 * 60 * 1000);
 
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`> Ready on http://localhost:${port}`);
-  });
+  server.listen(port, () => {
+  logger.info(`Ready on http://localhost:${port}`);
+});
 });

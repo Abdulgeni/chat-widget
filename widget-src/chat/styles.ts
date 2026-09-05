@@ -104,10 +104,21 @@ export const chatStyles = `
     color: #374151;
   }
   .quick-reply-btn:hover { background: #f3f4f6; }
-  .attach-btn {
+    .upload-btn {
     display: flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; cursor: pointer; font-size: 16px;
-    border-radius: 8px;
+    border-radius: 8px; border: 1px solid #d1d5db; background: #fff;
+    flex-shrink: 0;
   }
+  .upload-btn:hover:not(:disabled) { background: #f3f4f6; }
+  .upload-btn:disabled { cursor: not-allowed; opacity: .6; }
+  .upload-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid #d1d5db;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: uploadSpin .7s linear infinite;
+  }
+  @keyframes uploadSpin { to { transform: rotate(360deg); } }
   .attach-btn:hover { background: #f3f4f6; }
   `;

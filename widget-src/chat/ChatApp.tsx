@@ -42,9 +42,11 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const transportRef = useRef<ChatTransport | null>(null);
   const tabSyncRef = useRef<TabSync | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionIdRef = useRef<string>(
     (typeof localStorage !== 'undefined' && localStorage.getItem('aiChatSessionId')) ||
       (() => {
@@ -159,6 +161,7 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
   }
 
   async function handleFileUpload(file: File) {
+    setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('sessionId', sessionIdRef.current);
@@ -187,6 +190,8 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
         ...prev,
         { id: crypto.randomUUID(), role: 'assistant', text: 'Upload failed — please try again.', time: Date.now() },
       ]);
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -230,19 +235,26 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
       </div>
 
       <div className="chat-input-row">
-        <label className="attach-btn" title="Attach a PDF">
-          📎
-          <input
-            type="file"
-            accept="application/pdf"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFileUpload(file);
-              e.target.value = '';
-            }}
-          />
-        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+            e.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          className="upload-btn"
+          title="Upload a PDF"
+          disabled={isUploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isUploading ? <span className="upload-spinner" /> : '📎'}
+        </button>
         <input
           className="chat-input"
           value={input}

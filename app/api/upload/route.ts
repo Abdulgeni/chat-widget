@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
+import pdfParse from 'pdf-parse';
 import { embedText } from '../../../lib/rag/embeddings.mjs';
 import { saveChunk } from '../../../lib/rag/store.mjs';
 
@@ -14,11 +15,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Dynamic import + `any` sidesteps type-declaration mismatches between
-    // pdf-parse's published types and its actual v2 runtime shape.
-    const pdfParseModule: any = await import('pdf-parse');
-    const pdfParse = pdfParseModule.default || pdfParseModule;
     const parsed = await pdfParse(buffer);
     const text: string = parsed.text || '';
 
@@ -42,6 +38,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, chunks: chunks.length });
   } catch (err: any) {
+    console.error('[upload] full error:', err);
     return NextResponse.json({ error: err.message || 'upload failed' }, { status: 500 });
   }
 }

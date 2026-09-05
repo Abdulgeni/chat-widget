@@ -16,7 +16,16 @@ interface ChatAppProps {
 }
 
 function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const date = new Date(ts);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (isToday) return time;
+
+  const day = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return `${day}, ${time}`;
 }
 
 export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {

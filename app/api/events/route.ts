@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get('sessionId') || 'unknown';
+  const origin = req.headers.get('origin') || '';
 
   const stream = new ReadableStream({
     start(controller) {
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': origin || '*',
     },
   });
 }

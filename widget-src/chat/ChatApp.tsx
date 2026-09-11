@@ -15,6 +15,7 @@ interface ChatAppProps {
   theme?: { primaryColor?: string };
   apiOrigin: string;
   appId?: string;
+  onClose?: () => void;
 }
 
 function formatTime(ts: number) {
@@ -30,7 +31,7 @@ function formatTime(ts: number) {
   return `${day}, ${time}`;
 }
 
-export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
+export default function ChatApp({ theme, apiOrigin, appId, onClose }: ChatAppProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -199,8 +200,15 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
 
   return (
     <div className="chat-window">
-      <div className="chat-header" style={{ background: primary }}>
-        <span>AI Support</span>
+      <div className="chat-header" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
+        <div className="header-avatar">🤖</div>
+        <div className="header-text">
+          <div className="header-title">AI Support</div>
+          <div className="header-status">
+            <span className="status-online-dot" /> Online now
+          </div>
+        </div>
+        <button className="header-close" onClick={onClose} aria-label="Close chat">✕</button>
       </div>
 
       <div className="chat-list" ref={listRef}>
@@ -248,7 +256,7 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
         />
         <button
           type="button"
-          className="upload-btn"
+          className="icon-btn upload-btn"
           title="Upload a PDF"
           disabled={isUploading}
           onClick={() => fileInputRef.current?.click()}
@@ -268,8 +276,17 @@ export default function ChatApp({ theme, apiOrigin, appId }: ChatAppProps) {
           placeholder="Type a message…"
           aria-label="Message"
         />
-        <button className="chat-send" type="button" onClick={() => handleSend()} style={{ background: primary }}>
-          Send
+        <button
+          className="icon-btn chat-send"
+          type="button"
+          onClick={() => handleSend()}
+          style={{ background: primary }}
+          aria-label="Send"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
         </button>
       </div>
     </div>

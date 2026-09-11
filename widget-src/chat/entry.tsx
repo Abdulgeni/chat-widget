@@ -17,16 +17,21 @@ let mountEl: HTMLElement | null = null;
 export function mountChat(container: HTMLElement, shadow: ShadowRoot, config: MountConfig) {
   mountEl = container;
 
-  // Inject this chunk's own styles into the shared shadow root.
-  // Scoped by :host already being `all: initial` from Loop 1 — no leakage either way.
   const styleTag = document.createElement('style');
   styleTag.textContent = chatStyles;
   shadow.appendChild(styleTag);
 
   root = createRoot(container);
-  root.render(<ChatApp theme={config.theme} apiOrigin={config.apiOrigin || ''} appId={config.appId} />);
+  root.render(
+    <ChatApp
+      theme={config.theme}
+      apiOrigin={config.apiOrigin || ''}
+      appId={config.appId}
+      onClose={() => dispatch('close')}
+    />
+  );
 
-  container.style.display = 'none'; // start closed; opened via toggle/dispatch
+  container.style.display = 'none';
 }
 
 export function dispatch(cmd: string, ...args: unknown[]) {
@@ -41,6 +46,4 @@ export function dispatch(cmd: string, ...args: unknown[]) {
     visible = !visible;
     mountEl.style.display = visible ? 'block' : 'none';
   }
-  // 'sendMessage' with a real backend call arrives in Loop 3/4 —
-  // for now the mock UI only responds to typed input, not dispatch().
 }

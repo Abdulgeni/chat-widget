@@ -45,4 +45,4 @@ aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#2563eb' } });
 
 Self-host: run `npm run build && npm start` behind any Node-capable host (this project uses a custom server.js for the WebSocket endpoint, so it needs a persistent Node process — not a pure serverless/edge target).
 
-Vercel: WebSocket support requires their Edge/Node runtime configuration for long-lived connections — check current Vercel docs for WebSocket support before deploying there as-is.
+

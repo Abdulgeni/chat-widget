@@ -10,6 +10,7 @@
     "lint": "eslint",
     "build:widget": "node scripts/build-widget.mjs",
     "test": "node --test tests/",
+    "backup": "node scripts/backup-db.mjs",
     "purge": "node scripts/purge-old-data.mjs"
   },
   "dependencies": {

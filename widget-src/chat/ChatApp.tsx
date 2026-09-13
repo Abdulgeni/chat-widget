@@ -32,6 +32,10 @@ function formatTime(ts: number) {
 }
 
 export default function ChatApp({ theme, apiOrigin, appId, onClose }: ChatAppProps) {
+  const [visitorName, setVisitorName] = useState<string | null>(
+    typeof localStorage !== 'undefined' ? localStorage.getItem('aiChatVisitorName') : null
+  );
+  const [nameInput, setNameInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -197,6 +201,57 @@ export default function ChatApp({ theme, apiOrigin, appId, onClose }: ChatAppPro
   }
 
   const primary = theme?.primaryColor || '#4f46e5';
+
+  if (!visitorName) {
+    return (
+      <div className="chat-window">
+        <div className="chat-header" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
+          <div className="header-avatar">🤖</div>
+          <div className="header-text">
+            <div className="header-title">AI Support</div>
+            <div className="header-status"><span className="status-online-dot" /> Online now</div>
+          </div>
+          <button className="header-close" onClick={onClose} aria-label="Close chat">✕</button>
+        </div>
+        <div className="prechat">
+          <h3>Hey there 👋</h3>
+          <p>What's your name? Just so I know who I'm talking to.</p>
+          <input
+            autoFocus
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && nameInput.trim()) {
+                localStorage.setItem('aiChatVisitorName', nameInput.trim());
+                setVisitorName(nameInput.trim());
+              }
+            }}
+            placeholder="Your name"
+          />
+          <button
+            className="prechat-submit"
+            onClick={() => {
+              if (nameInput.trim()) {
+                localStorage.setItem('aiChatVisitorName', nameInput.trim());
+                setVisitorName(nameInput.trim());
+              }
+            }}
+          >
+            Start chatting
+          </button>
+          <button
+            className="prechat-skip"
+            onClick={() => {
+              localStorage.setItem('aiChatVisitorName', 'Guest');
+              setVisitorName('Guest');
+            }}
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="chat-window">

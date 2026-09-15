@@ -1,18 +1,58 @@
-"use strict";(()=>{var w='<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3V4z"/></svg>',_='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';(function(){var x;let f=window,u=f.__aiChatConfig||{},n=document.currentScript,p=(n==null?void 0:n.getAttribute("data-ai-chat-origin"))||(n!=null&&n.src?new URL(n.src).origin:""),g=((x=u.theme)==null?void 0:x.primaryColor)||"#4f46e5",a=document.createElement("div");a.id="__ai-chat-widget-host",a.style.position="fixed",a.style.zIndex="2147483647",a.style.bottom="20px",a.style.right="20px",document.body.appendChild(a);let c=a.attachShadow({mode:"open"}),m=document.createElement("style");m.textContent=`
+"use strict";(()=>{var E='<svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3V4z"/></svg>',T='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';(function(){var v;let u=window,h=u.__aiChatConfig||{},a=document.currentScript,f=(a==null?void 0:a.getAttribute("data-ai-chat-origin"))||(a!=null&&a.src?new URL(a.src).origin:""),M="#4338ca",g=((v=h.theme)==null?void 0:v.primaryColor)||"#8b5cf6",i=document.createElement("div");i.id="__ai-chat-widget-host",i.style.position="fixed",i.style.zIndex="2147483647",i.style.bottom="20px",i.style.right="20px",document.body.appendChild(i);let c=i.attachShadow({mode:"open"}),m=document.createElement("style");m.textContent=`
     :host { all: initial; }
+    .fab-wrap { position: relative; width: 60px; height: 60px; }
+    .aura {
+      position: absolute; inset: -14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, ${g}55, transparent 70%);
+      opacity: 0;
+      transition: opacity .3s ease;
+      pointer-events: none;
+      animation: auraBreathe 3s ease-in-out infinite;
+    }
+    .fab-wrap:hover .aura { opacity: 1; }
+    @keyframes auraBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
     .fab {
-      width: 60px; height: 60px; border-radius: 50%;
-      background: linear-gradient(135deg, ${g}, ${M(g,-18)});
+      position: relative;
+      width: 60px; height: 60px; border-radius: 20px;
+      background: linear-gradient(135deg, ${M}, ${g});
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; border: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.12);
-      transition: transform .18s ease, box-shadow .18s ease;
-      font-family: system-ui, -apple-system, sans-serif;
-      animation: fabPop .35s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 10px 30px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.15);
+      transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .2s ease;
+      font-family: system-ui, sans-serif;
+      animation: fabPop .5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    @keyframes fabPop { from { transform: scale(0); } to { transform: scale(1); } }
-    .fab:hover { transform: scale(1.07); box-shadow: 0 10px 28px rgba(0,0,0,.28); }
-    .fab:active { transform: scale(.96); }
-    .fab svg { width: 26px; height: 26px; fill: #fff; }
+    @keyframes fabPop { from { transform: scale(0) rotate(-10deg); } to { transform: scale(1) rotate(0); } }
+    .fab:hover { transform: scale(1.08) rotate(-2deg); }
+    .fab:active { transform: scale(.94); }
+    .fab svg { width: 25px; height: 25px; fill: #fff; }
     .chat-mount { position: fixed; bottom: 92px; right: 20px; }
-  `;let e=document.createElement("button");e.className="fab",e.setAttribute("aria-label","Open chat"),e.innerHTML=w;let h=document.createElement("div");h.className="chat-mount",c.appendChild(m),c.appendChild(e),c.appendChild(h);let d=null,o=null,C=!1;function y(t){C=t,e.innerHTML=t?_:w,e.setAttribute("aria-label",t?"Close chat":"Open chat")}function b(){return d?Promise.resolve(d):o||(e.style.opacity="0.6",o=import(`${p}/widget-chunk.js`).then(t=>(e.style.opacity="1",t.mountChat(h,c,{...u,apiOrigin:p}),(f.__aiChatCmdBuffer||[]).forEach(i=>{var l;let[s,...r]=i;(l=t.dispatch)==null||l.call(t,s,...r)}),d=t,t)).catch(t=>{throw e.style.opacity="1",o=null,console.warn("[ai-chat-widget] failed to load widget-chunk.js:",t),t}),o)}e.addEventListener("click",async()=>{var t;try{let i=await b();(t=i.dispatch)==null||t.call(i,"toggle"),y(!C)}catch{}}),e.addEventListener("mouseenter",()=>b(),{once:!0});function M(t,i){let s=parseInt(t.replace("#",""),16),r=Math.round(2.55*i),l=Math.min(255,Math.max(0,(s>>16)+r)),v=Math.min(255,Math.max(0,(s>>8&255)+r)),k=Math.min(255,Math.max(0,(s&255)+r));return`#${((1<<24)+(l<<16)+(v<<8)+k).toString(16).slice(1)}`}})();})();
+
+    .nudge {
+      position: absolute;
+      bottom: 72px;
+      right: 0;
+      width: 220px;
+      background: #16171d;
+      color: #f2f3f5;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 14px;
+      font-size: 13px;
+      font-family: system-ui, sans-serif;
+      line-height: 1.4;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      cursor: pointer;
+      animation: nudgeIn .5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes nudgeIn { from { opacity: 0; transform: translateY(8px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .nudge-close {
+      position: absolute; top: -8px; right: -8px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #2a2b33; color: #fff; border: none;
+      font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+  `;let o=document.createElement("div");o.className="fab-wrap";let b=document.createElement("div");b.className="aura";let e=document.createElement("button");e.className="fab",e.setAttribute("aria-label","Open chat"),e.innerHTML=E;let l=document.createElement("div");l.className="chat-mount",o.appendChild(b),o.appendChild(e),c.appendChild(m),c.appendChild(o),c.appendChild(l);let d=null,s=null,p=!1,x=!1,n=null;function L(t){p=t,e.innerHTML=t?T:E,e.setAttribute("aria-label",t?"Close chat":"Open chat")}function w(){return d?Promise.resolve(d):s||(e.style.opacity="0.6",s=import(`${f}/widget-chunk.js`).then(t=>(e.style.opacity="1",t.mountChat(l,c,{...h,apiOrigin:f}),(u.__aiChatCmdBuffer||[]).forEach(r=>{var k;let[N,...H]=r;(k=t.dispatch)==null||k.call(t,N,...H)}),d=t,t)).catch(t=>{throw e.style.opacity="1",s=null,console.warn("[ai-chat-widget] failed to load widget-chunk.js:",t),t}),s)}async function C(){var t;y();try{let r=await w();(t=r.dispatch)==null||t.call(r,"toggle"),L(!p)}catch{}}function y(){n&&(n.remove(),n=null)}function _(){x||p||(x=!0,n=document.createElement("div"),n.className="nudge",n.innerHTML=`\u{1F44B} Need a hand with anything? I'm here to help.<button class="nudge-close" aria-label="Dismiss">\u2715</button>`,n.addEventListener("click",t=>{if(t.target.classList.contains("nudge-close")){t.stopPropagation(),y();return}C()}),o.appendChild(n))}e.addEventListener("click",C),e.addEventListener("mouseenter",()=>w(),{once:!0}),setTimeout(_,8e3)})();})();

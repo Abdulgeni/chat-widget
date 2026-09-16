@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-function checkAuth(req: NextRequest) {
-  const secret = req.headers.get('x-admin-secret');
-  return secret && secret === process.env.ADMIN_SECRET;
-}
-
-export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-
+function doBackup() {
   try {
     const dbPath = path.join(process.cwd(), 'chat.db');
     const backupDir = path.join(process.cwd(), 'backups');
@@ -23,4 +16,20 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
+}
+
+export async function GET(req: NextRequest) {
+  const secret = req.nextUrl.searchParams.get('secret');
+  if (!secret || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  return doBackup();
+}
+
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get('x-admin-secret');
+  if (!secret || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  return doBackup();
 }

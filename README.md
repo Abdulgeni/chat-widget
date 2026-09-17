@@ -4,14 +4,7 @@ Embeddable, Shadow-DOM-isolated AI chat widget with real-time streaming, persist
 
 
 
-## Run locally
 
-npm run build:widget   # builds public/widget.js, widget-fab.js, widget-chunk.js
-npm run dev             # starts the server (Next.js + WebSocket) on http://localhost:3000
-
-Seed a test appId once:
-
-node scripts/seed-widget-config.mjs
 
 ## Embed on a third-party site
 

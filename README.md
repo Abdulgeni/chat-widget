@@ -4,10 +4,6 @@ Embeddable, Shadow-DOM-isolated AI chat widget with real-time streaming, persist
 
 npm install
 
-## Environment variables (.env.local)
-
-GOOGLE_API_KEY=your-gemini-api-key
-JWT_SECRET=some-random-secret-string
 
 ## Run locally
 

@@ -1,6 +1,5 @@
 # AI Chat Widget
 
-Embeddable, Shadow-DOM-isolated AI chat widget with real-time streaming, persistence, RAG document upload, and multi-tab sync.
 
 
 

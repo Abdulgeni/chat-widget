@@ -7,13 +7,7 @@
 
 ## Embed on a third-party site
 
-<script>
-(function(w,d,s,o,f,js,fjs){
-    w['ChatWidgetObject']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
-    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
-}(window,document,'script','aiChat','https://yourdomain.com/widget.js'));
-aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#2563eb' } });
-</script>
+
 
 ## Architecture
 

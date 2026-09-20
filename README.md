@@ -26,8 +26,5 @@ aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#2563eb' } });
 - lib/security/ — domain allowlisting, JWT verification, rate limiting, input sanitization
 - lib/rag/ — PDF upload → chunk → embed → cosine-similarity retrieval, no separate vector DB server needed
 
-## Deployment
-
-Self-host: run `npm run build && npm start` behind any Node-capable host (this project uses a custom server.js for the WebSocket endpoint, so it needs a persistent Node process — not a pure serverless/edge target).
 
 

@@ -109,7 +109,7 @@ app.prepare().then(() => {
     } catch (err) {
       logger.error({ err }, 'daily backup failed');
     }
-  }, 60 * 1000);
+ }, 24 * 60 * 60 * 1000);
 
   server.listen(port, () => {
     logger.info(`Ready on http://localhost:${port}`);

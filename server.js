@@ -94,6 +94,21 @@ app.prepare().then(() => {
   logger.info(result, 'daily data retention purge complete');
 }, 24 * 60 * 60 * 1000);
 
+  setInterval(() => {
+    try {
+      const { copyFileSync, existsSync, mkdirSync } = require('node:fs');
+      const path = require('node:path');
+      const dbPath = path.join(process.cwd(), 'chat.db');
+      const backupDir = path.join(process.cwd(), 'backups');
+      if (!existsSync(backupDir)) mkdirSync(backupDir);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      copyFileSync(dbPath, path.join(backupDir, `chat-${timestamp}.db`));
+      logger.info('daily backup complete');
+    } catch (err) {
+      logger.error({ err }, 'daily backup failed');
+    }
+  }, 24 * 60 * 60 * 1000);
+
   server.listen(port, () => {
   logger.info(`Ready on http://localhost:${port}`);
 });

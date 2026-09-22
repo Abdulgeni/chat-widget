@@ -7,8 +7,8 @@ export const chatStyles = `
     --bubble-user: rgba(255,255,255,0.08);
     --bubble-assistant: rgba(255,255,255,0.05);
     --border-glass: rgba(255,255,255,0.12);
-    --accent-1: #4338ca;
-    --accent-2: #8b5cf6;
+    --accent-1: #d13f3f;
+    --accent-2: #ff6363;
   }
   @media (prefers-color-scheme: light) {
     :host {

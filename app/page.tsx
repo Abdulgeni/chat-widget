@@ -1,9 +1,11 @@
 'use client';
 
 import Script from 'next/script';
+import Reveal from '../components/Reveal';
 import {
   ShieldCheck, Zap, FileText, Lock, Clock, Settings2,
   MessageCircle, Database, Radio, Sparkles, ArrowRight,
+  KeyRound, Gauge, Paintbrush,
 } from 'lucide-react';
 
 const features = [
@@ -16,6 +18,9 @@ const features = [
   { icon: MessageCircle, title: 'Multi-tab sync', body: 'Open the site in two tabs — one conversation, always in sync.' },
   { icon: Database, title: 'Automatic backups', body: 'The database backs itself up daily, unattended.' },
   { icon: Sparkles, title: 'Quick replies', body: 'Guided prompts that reduce typing and speed up resolution.' },
+  { icon: KeyRound, title: 'JWT identity', body: 'Link a conversation to a logged-in visitor with a signed token.' },
+  { icon: Gauge, title: 'Rate limiting', body: 'IP-aware limits stop abuse without punishing real visitors.' },
+  { icon: Paintbrush, title: 'Brand theming', body: 'Every client gets their own color, matched end to end.' },
 ];
 
 const stack = [
@@ -136,11 +141,13 @@ export default function Home() {
 
       {/* Statement */}
       <section className="max-w-xl mx-auto px-6 py-20 text-center border-t border-white/[0.06] mt-14">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-white/90 leading-snug">
-          It isn&apos;t about adding a chatbot.
-          <br />
-          <span className="text-gray-500">It&apos;s about not losing the visitor who almost left.</span>
-        </h2>
+        <Reveal>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white/90 leading-snug">
+            It isn&apos;t about adding a chatbot.
+            <br />
+            <span className="text-gray-500">It&apos;s about not losing the visitor who almost left.</span>
+          </h2>
+        </Reveal>
       </section>
 
       {/* Tech stack badge row — Raycast "there's an extension for that" beat */}
@@ -174,28 +181,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Expanded feature grid — 9 items */}
+      {/* Expanded feature grid — 12 items */}
       <section id="features" className="max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]">
         <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
         <p className="text-gray-500 text-sm mb-14 text-center">Restraint, not accumulation.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {features.map((f) => {
+          {features.map((f, i) => {
             const IconEl = f.icon;
             return (
-              <div
-                key={f.title}
-                className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-6 hover:border-white/[0.15] hover:bg-white/[0.035] transition-colors duration-200"
-                style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
-              >
+              <Reveal key={f.title} delay={(i % 3) * 0.08}>
                 <div
-                  className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-violet-300"
-                  style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                  className="h-full rounded-xl border border-white/[0.07] bg-white/[0.02] p-6 hover:border-[#ff6363]/25 hover:bg-white/[0.035] transition-colors duration-200"
+                  style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
                 >
-                  <IconEl className="w-4 h-4" strokeWidth={1.5} />
+                  <div
+                    className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
+                    style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                  >
+                    <IconEl className="w-4 h-4" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
+                  <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
                 </div>
-                <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
-                <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
-              </div>
+              </Reveal>
             );
           })}
         </div>
@@ -203,80 +211,86 @@ export default function Home() {
 
       {/* Showcase — larger in-depth capability spotlight, Raycast "Magic at your fingertips" beat */}
       <section id="showcase" className="max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3 py-1 text-[11px] text-violet-300 mb-5">
-              Retrieval-augmented
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-4 leading-snug">
-              It reads the document.
-              <br />
-              Then it answers from it.
-            </h2>
-            <p className="text-gray-400 text-[14px] leading-relaxed max-w-sm">
-              Visitors can upload a PDF mid-conversation. The widget chunks it,
-              embeds it, and grounds its next answer in what&apos;s actually
-              written there — not a guess from general training data.
-            </p>
-          </div>
-          <div
-            className="rounded-2xl border border-white/[0.08] bg-[#0a0b0d] p-5"
-            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.4)' }}
-          >
-            <div className="flex items-center gap-2 text-[11px] text-gray-500 pb-3 border-b border-white/[0.06]">
-              <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span className="font-mono">cover-letter.pdf</span>
-            </div>
-            <div className="pt-4 space-y-2.5">
-              <div className="rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-gray-300 max-w-[85%]">
-                What role is this letter for?
+        <Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3 py-1 text-[11px] text-violet-300 mb-5">
+                Retrieval-augmented
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-rose-500/15 to-violet-500/15 border border-white/[0.06] px-3 py-2 text-[12px] text-gray-200 max-w-[90%] ml-auto">
-                Based on the document, it&apos;s an application for a Senior
-                Frontend Engineer position.
+              <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-4 leading-snug">
+                It reads the document.
+                <br />
+                Then it answers from it.
+              </h2>
+              <p className="text-gray-400 text-[14px] leading-relaxed max-w-sm">
+                Visitors can upload a PDF mid-conversation. The widget chunks it,
+                embeds it, and grounds its next answer in what&apos;s actually
+                written there — not a guess from general training data.
+              </p>
+            </div>
+            <div
+              className="rounded-2xl border border-white/[0.08] bg-[#0a0b0d] p-5"
+              style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.4)' }}
+            >
+              <div className="flex items-center gap-2 text-[11px] text-gray-500 pb-3 border-b border-white/[0.06]">
+                <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="font-mono">cover-letter.pdf</span>
+              </div>
+              <div className="pt-4 space-y-2.5">
+                <div className="rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-gray-300 max-w-[85%]">
+                  What role is this letter for?
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-rose-500/15 to-violet-500/15 border border-white/[0.06] px-3 py-2 text-[12px] text-gray-200 max-w-[90%] ml-auto">
+                  Based on the document, it&apos;s an application for a Senior
+                  Frontend Engineer position.
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* Engineering */}
       <section id="engineering" className="max-w-3xl mx-auto px-6 py-24 border-t border-white/[0.06]">
-        <h2 className="text-2xl font-semibold text-white mb-12 text-center">What we verified, not just claimed.</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
-          {[
-            { k: 'Isolation', v: 'Shadow DOM boundary — confirmed in DevTools, not assumed.' },
-            { k: 'Resilience', v: 'Falls back from WebSocket to SSE to plain HTTP automatically.' },
-            { k: 'Observability', v: 'Structured logs and error tracking on every request path.' },
-            { k: 'Data hygiene', v: 'Automatic daily backups and retention purging, unattended.' },
-          ].map((h) => (
-            <div key={h.k} className="flex gap-3">
-              <span className="w-1 h-1 mt-2 rounded-full bg-rose-400 flex-shrink-0" />
-              <div>
-                <div className="text-[13px] font-semibold text-white mb-1">{h.k}</div>
-                <div className="text-[13px] text-gray-400 leading-relaxed">{h.v}</div>
+        <Reveal>
+          <h2 className="text-2xl font-semibold text-white mb-12 text-center">What we verified, not just claimed.</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+            {[
+              { k: 'Isolation', v: 'Shadow DOM boundary — confirmed in DevTools, not assumed.' },
+              { k: 'Resilience', v: 'Falls back from WebSocket to SSE to plain HTTP automatically.' },
+              { k: 'Observability', v: 'Structured logs and error tracking on every request path.' },
+              { k: 'Data hygiene', v: 'Automatic daily backups and retention purging, unattended.' },
+            ].map((h) => (
+              <div key={h.k} className="flex gap-3">
+                <span className="w-1 h-1 mt-2 rounded-full bg-rose-400 flex-shrink-0" />
+                <div>
+                  <div className="text-[13px] font-semibold text-white mb-1">{h.k}</div>
+                  <div className="text-[13px] text-gray-400 leading-relaxed">{h.v}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Reveal>
       </section>
 
       {/* Embed */}
       <section id="embed" className="max-w-2xl mx-auto px-6 py-24 border-t border-white/[0.06]">
-        <h2 className="text-2xl font-semibold text-white mb-2 text-center">One snippet. The whole integration.</h2>
-        <p className="text-gray-500 text-[13px] mb-8 text-center">Exactly what a client pastes into their site.</p>
-        <pre
-          className="rounded-xl border border-white/[0.08] bg-[#0a0b0d] p-5 text-[12px] text-gray-300 overflow-x-auto font-mono leading-relaxed"
-          style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-        >
+        <Reveal>
+          <h2 className="text-2xl font-semibold text-white mb-2 text-center">One snippet. The whole integration.</h2>
+          <p className="text-gray-500 text-[13px] mb-8 text-center">Exactly what a client pastes into their site.</p>
+          <pre
+            className="rounded-xl border border-white/[0.08] bg-[#0a0b0d] p-5 text-[12px] text-gray-300 overflow-x-auto font-mono leading-relaxed"
+            style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+          >
 {`<script>
 (function(w,d,s,o,f,js,fjs){
   w['ChatWidgetObject']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
   js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
 }(window,document,'script','aiChat','https://your-domain.com/widget.js'));
-aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#8b5cf6' } });
+aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#ff6363' } });
 </script>`}
-        </pre>
+          </pre>
+        </Reveal>
       </section>
 
       {/* Closing CTA band */}
@@ -315,7 +329,7 @@ aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#8b5cf6' } });
             w['ChatWidgetObject']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
             js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
           }(window,document,'script','aiChat','/widget.js'));
-          aiChat('init', { appId: 'test-app', theme: { primaryColor: '#8b5cf6' } });
+          aiChat('init', { appId: 'test-app', theme: { primaryColor: '#ff6363' } });
         `}
       </Script>
     </div>

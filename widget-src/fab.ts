@@ -25,8 +25,9 @@ const CLOSE_ICON = `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stro
     currentScript?.getAttribute('data-ai-chat-origin') ||
     (currentScript?.src ? new URL(currentScript.src).origin : '');
 
-  const accent1 = '#4338ca';
-  const accent2 = config.theme?.primaryColor || '#8b5cf6';
+  const brand = config.theme?.primaryColor || '#ff6363';
+  const accent1 = shadeColor(brand, -30);
+  const accent2 = brand;
 
   const host = document.createElement('div');
   host.id = '__ai-chat-widget-host';
@@ -195,6 +196,15 @@ const CLOSE_ICON = `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stro
   button.addEventListener('mouseenter', () => loadChatEngine(), { once: true });
 
   setTimeout(showNudge, 8000);
+
+  function shadeColor(hex: string, percent: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amt));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt));
+    const b = Math.min(255, Math.max(0, (num & 0x0000ff) + amt));
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
 })();
 
 export {};

@@ -1,113 +1,103 @@
 'use client';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { RoundedBox } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import type { Group, Mesh } from 'three';
 
-function Container({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
+function ChatBubble({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   const group = useRef<Group>(null);
-  const topRef = useRef<Mesh>(null);
-  const bottomRef = useRef<Mesh>(null);
+  const bodyRef = useRef<Mesh>(null);
   const coreRef = useRef<Mesh>(null);
-  const ringRef = useRef<Mesh>(null);
-  const bubbleA = useRef<Mesh>(null);
-  const bubbleB = useRef<Mesh>(null);
+  const dot1 = useRef<Mesh>(null);
+  const dot2 = useRef<Mesh>(null);
+  const dot3 = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  const topVel = useRef(0);
-  const botVel = useRef(0);
-  const coreScaleVel = useRef(0);
+  const bodyVel = useRef(0);
+  const coreVel = useRef(0);
 
   useFrame((state, delta) => {
     if (group.current) {
-      group.current.rotation.y += delta * (isOpen ? 0.08 : 0.22);
-      const targetScale = hovered && !isOpen ? 1.08 : 1;
-      group.current.scale.lerp({ x: targetScale, y: targetScale, z: targetScale } as any, 0.1);
+      group.current.rotation.y += delta * (isOpen ? 0.15 : 0.35);
+      const targetScale = hovered ? 1.1 : 1;
+      const s = group.current.scale.x + (targetScale - group.current.scale.x) * 0.12;
+      group.current.scale.setScalar(s);
     }
 
-    // Simple critically-damped spring for the shell halves.
-    const targetOffset = isOpen ? 0.85 : 0.02;
-    if (topRef.current) {
-      const cur = topRef.current.position.y;
-      const force = (targetOffset - cur) * 12 - topVel.current * 6;
-      topVel.current += force * delta;
-      topRef.current.position.y += topVel.current * delta;
-      topRef.current.rotation.z = (targetOffset - 0.02) * 0.4;
-    }
-    if (bottomRef.current) {
-      const cur = bottomRef.current.position.y;
-      const force = (-targetOffset - cur) * 12 - botVel.current * 6;
-      botVel.current += force * delta;
-      bottomRef.current.position.y += botVel.current * delta;
-      bottomRef.current.rotation.z = -(targetOffset - 0.02) * 0.4;
+    // Body splits open by scaling down / fading as core rises.
+    const targetBodyY = isOpen ? -0.4 : 0;
+    if (bodyRef.current) {
+      const cur = bodyRef.current.position.y;
+      const force = (targetBodyY - cur) * 10 - bodyVel.current * 5.5;
+      bodyVel.current += force * delta;
+      bodyRef.current.position.y += bodyVel.current * delta;
     }
 
-    // Core pulses in once open.
-    const targetCoreScale = isOpen ? 1 : 0.001;
+    const targetCore = isOpen ? 1 : 0.001;
     if (coreRef.current) {
       const cur = coreRef.current.scale.x;
-      const force = (targetCoreScale - cur) * 10 - coreScaleVel.current * 5;
-      coreScaleVel.current += force * delta;
-      const next = cur + coreScaleVel.current * delta;
-      coreRef.current.scale.setScalar(Math.max(0.001, next));
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 2.2) * 0.06;
-      if (isOpen) coreRef.current.scale.multiplyScalar(pulse);
+      const force = (targetCore - cur) * 9 - coreVel.current * 5;
+      coreVel.current += force * delta;
+      const next = Math.max(0.001, cur + coreVel.current * delta);
+      const pulse = isOpen ? 1 + Math.sin(state.clock.elapsedTime * 2.4) * 0.07 : 1;
+      coreRef.current.scale.setScalar(next * pulse);
+      coreRef.current.position.y = 0.55;
     }
 
-    if (ringRef.current) {
-      ringRef.current.rotation.x += delta * 0.6;
-      ringRef.current.rotation.y += delta * 0.3;
+    // Three small "typing dots" float up when open.
+    [dot1, dot2, dot3].forEach((d, i) => {
+      if (!d.current) return;
       const s = isOpen ? 1 : 0;
-      ringRef.current.scale.lerp({ x: s, y: s, z: s } as any, 0.08);
-    }
-    if (bubbleA.current && bubbleB.current) {
-      const t = state.clock.elapsedTime;
-      const s = isOpen ? 1 : 0;
-      bubbleA.current.scale.lerp({ x: s, y: s, z: s } as any, 0.08);
-      bubbleB.current.scale.lerp({ x: s, y: s, z: s } as any, 0.08);
-      bubbleA.current.position.set(Math.cos(t * 0.7) * 1.4, 0.3 + Math.sin(t * 1.1) * 0.15, Math.sin(t * 0.7) * 1.4);
-      bubbleB.current.position.set(Math.cos(t * 0.7 + Math.PI) * 1.4, -0.2 + Math.sin(t * 1.3) * 0.15, Math.sin(t * 0.7 + Math.PI) * 1.4);
-    }
+      d.current.scale.lerp({ x: s, y: s, z: s } as any, 0.09);
+      const t = state.clock.elapsedTime * 2 + i * 0.6;
+      d.current.position.y = -0.75 + Math.sin(t) * 0.06;
+      d.current.position.x = -0.35 + i * 0.35;
+    });
   });
 
   return (
     <group
       ref={group}
-      onClick={onToggle}
+      scale={1.9}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      {/* Top shell half */}
-      <mesh ref={topRef} position={[0, 0.02, 0]}>
-        <boxGeometry args={[1.8, 0.9, 1.8]} />
-        <meshStandardMaterial color="#ff6363" emissive="#ff6363" emissiveIntensity={0.15} wireframe roughness={0.4} />
-      </mesh>
-      {/* Bottom shell half */}
-      <mesh ref={bottomRef} position={[0, -0.02, 0]}>
-        <boxGeometry args={[1.8, 0.9, 1.8]} />
-        <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.15} wireframe roughness={0.4} />
+      {/* Big invisible hit-sphere so clicks register reliably everywhere on the shape */}
+      <mesh onClick={(e) => { e.stopPropagation(); onToggle(); }}>
+        <sphereGeometry args={[1.3, 16, 16]} />
+        <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* AI core */}
+      {/* Chat bubble body */}
+      <RoundedBox ref={bodyRef as any} args={[1.6, 1.1, 0.5]} radius={0.28} smoothness={6}>
+        <meshStandardMaterial
+          color="#ff6363"
+          emissive="#ff6363"
+          emissiveIntensity={hovered ? 0.35 : 0.2}
+          roughness={0.35}
+          metalness={0.15}
+        />
+      </RoundedBox>
+      {/* Bubble tail */}
+      <mesh position={[-0.5, -0.75, 0]} rotation={[0, 0, Math.PI / 4]}>
+        <boxGeometry args={[0.32, 0.32, 0.32]} />
+        <meshStandardMaterial color="#ff6363" emissive="#ff6363" emissiveIntensity={0.2} roughness={0.35} />
+      </mesh>
+
+      {/* AI core revealed inside */}
       <mesh ref={coreRef}>
-        <icosahedronGeometry args={[0.55, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive="#ff6363" emissiveIntensity={0.6} roughness={0.2} metalness={0.3} />
+        <icosahedronGeometry args={[0.4, 1]} />
+        <meshStandardMaterial color="#ffffff" emissive="#8b5cf6" emissiveIntensity={0.7} roughness={0.15} metalness={0.4} />
       </mesh>
 
-      {/* Connection ring */}
-      <mesh ref={ringRef} rotation={[Math.PI / 3, 0, 0]}>
-        <torusGeometry args={[1.15, 0.015, 8, 64]} />
-        <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.5} />
-      </mesh>
-
-      {/* Two chat-bubble shapes orbiting the core */}
-      <mesh ref={bubbleA}>
-        <boxGeometry args={[0.34, 0.22, 0.05]} />
-        <meshStandardMaterial color="#ff8a8a" emissive="#ff6363" emissiveIntensity={0.4} roughness={0.3} />
-      </mesh>
-      <mesh ref={bubbleB}>
-        <boxGeometry args={[0.28, 0.2, 0.05]} />
-        <meshStandardMaterial color="#c4b5fd" emissive="#8b5cf6" emissiveIntensity={0.4} roughness={0.3} />
-      </mesh>
+      {/* Typing dots */}
+      <mesh ref={dot1}><sphereGeometry args={[0.06, 12, 12]} /><meshStandardMaterial color="#c4b5fd" emissive="#8b5cf6" emissiveIntensity={0.5} /></mesh>
+      <mesh ref={dot2}><sphereGeometry args={[0.06, 12, 12]} /><meshStandardMaterial color="#c4b5fd" emissive="#8b5cf6" emissiveIntensity={0.5} /></mesh>
+      <mesh ref={dot3}><sphereGeometry args={[0.06, 12, 12]} /><meshStandardMaterial color="#c4b5fd" emissive="#8b5cf6" emissiveIntensity={0.5} /></mesh>
     </group>
   );
 }
@@ -121,15 +111,16 @@ export default function FeatureScene({
 }) {
   return (
     <Canvas
-      camera={{ position: [0, 0.6, 5], fov: 45 }}
+      camera={{ position: [0, 0.3, 4.2], fov: 42 }}
       className="!absolute inset-0"
       gl={{ alpha: true, antialias: true }}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', touchAction: 'none' }}
+      onPointerMissed={onToggle}
     >
-      <ambientLight intensity={0.5} />
-      <pointLight position={[4, 3, 4]} intensity={35} color="#ff6363" />
-      <pointLight position={[-4, -2, 2]} intensity={25} color="#8b5cf6" />
-      <Container isOpen={isOpen} onToggle={onToggle} />
+      <ambientLight intensity={0.6} />
+      <pointLight position={[4, 3, 4]} intensity={40} color="#ff6363" />
+      <pointLight position={[-4, -2, 2]} intensity={30} color="#8b5cf6" />
+      <ChatBubble isOpen={isOpen} onToggle={onToggle} />
     </Canvas>
   );
 }

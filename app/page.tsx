@@ -1,12 +1,16 @@
 'use client';
 
 import Script from 'next/script';
-import Reveal from '../components/Reveal';
+import { motion } from 'framer-motion';
+import Logo from '../components/Logo';
+import FeatureScene from '../components/FeatureScene';
+import { staggerContainer, unfoldItem, Parallax } from '../components/Motion';
 import {
   ShieldCheck, Zap, FileText, Lock, Clock, Settings2,
   MessageCircle, Database, Radio, Sparkles, ArrowRight,
   KeyRound, Gauge, Paintbrush,
 } from 'lucide-react';
+import Reveal from '../components/Reveal';
 
 const features = [
   { icon: Lock, title: 'Fully isolated embed', body: 'Shadow DOM keeps every style and script sealed off from the host page.' },
@@ -38,15 +42,13 @@ export default function Home() {
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
       />
-      <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-gradient-to-br from-rose-600/[0.12] via-fuchsia-600/[0.07] to-violet-600/[0.10] rounded-full blur-[140px] pointer-events-none" />
+      <Parallax speed={0.4} className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-gradient-to-br from-rose-600/[0.12] via-fuchsia-600/[0.07] to-violet-600/[0.10] rounded-full blur-[140px] pointer-events-none" />
 
       {/* Floating glass nav */}
       <nav className="sticky top-4 z-40 w-full px-4">
         <div className="max-w-3xl mx-auto rounded-full border border-white/[0.08] bg-[#0a0b0d]/80 backdrop-blur-xl px-5 h-14 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-rose-500 to-violet-500 flex items-center justify-center">
-              <span className="font-bold text-white text-xs">C</span>
-            </div>
+            <Logo size={26} />
             <span className="text-[13px] font-semibold text-white tracking-tight">ChatWidget</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-[13px] text-gray-400">
@@ -97,18 +99,24 @@ export default function Home() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 opacity-0 animate-[fadeIn_0.7s_ease_forwards]"
           style={{ animationDelay: '0.5s' }}
         >
-          <a
+          <motion.a
             href="#embed"
+            whileHover={{ scale: 1.035, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-gray-200 transition-colors duration-200 shadow-[0_1px_0_rgba(255,255,255,0.4)_inset]"
           >
             Get the embed code
-          </a>
-          <a
+          </motion.a>
+          <motion.a
             href="#features"
+            whileHover={{ scale: 1.035, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             className="w-full sm:w-auto rounded-lg border border-white/[0.08] bg-white/[0.03] px-6 py-2.5 text-[13px] font-medium text-white/85 hover:bg-white/[0.06] transition-colors duration-200"
           >
             See how it works
-          </a>
+          </motion.a>
         </div>
 
         {/* Tactile mockup */}
@@ -181,17 +189,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Expanded feature grid — 12 items */}
-      <section id="features" className="max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
-        <p className="text-gray-500 text-sm mb-14 text-center">Restraint, not accumulation.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {features.map((f, i) => {
-            const IconEl = f.icon;
-            return (
-              <Reveal key={f.title} delay={(i % 3) * 0.08}>
-                <div
-                  className="h-full rounded-xl border border-white/[0.07] bg-white/[0.02] p-6 hover:border-[#ff6363]/25 hover:bg-white/[0.035] transition-colors duration-200"
+      {/* Unfolding 3D-backed feature grid — 12 items */}
+      <section id="features" className="relative max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06] overflow-hidden">
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
+          <FeatureScene />
+        </div>
+
+        <div className="relative">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
+          <p className="text-gray-500 text-sm mb-14 text-center">Restraint, not accumulation.</p>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            {features.map((f) => {
+              const IconEl = f.icon;
+              return (
+                <motion.div
+                  key={f.title}
+                  variants={unfoldItem}
+                  whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
+                  className="h-full rounded-xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-6 hover:border-[#ff6363]/30 hover:shadow-[0_12px_40px_rgba(255,99,99,0.12)] transition-colors duration-200"
                   style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
                 >
                   <div
@@ -202,10 +224,10 @@ export default function Home() {
                   </div>
                   <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
                   <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
-                </div>
-              </Reveal>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
@@ -298,13 +320,16 @@ aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#ff6363' } });
         <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6 leading-snug">
           Ready to see it on your own site?
         </h2>
-        <a
+        <motion.a
           href="#embed"
+          whileHover={{ scale: 1.035, y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-gray-200 transition-colors duration-200"
         >
           Get the embed code
           <ArrowRight className="w-4 h-4" strokeWidth={2} />
-        </a>
+        </motion.a>
       </section>
 
       {/* Footer */}

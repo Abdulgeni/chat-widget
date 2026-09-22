@@ -1,7 +1,8 @@
 'use client';
 
 import Script from 'next/script';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../components/Logo';
 import FeatureScene from '../components/FeatureScene';
 import { staggerContainer, unfoldItem, Parallax } from '../components/Motion';
@@ -33,6 +34,8 @@ const stack = [
 ];
 
 export default function Home() {
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+
   return (
     <div className="relative min-h-screen bg-[#08090b] text-gray-200 antialiased overflow-x-hidden selection:bg-violet-500/30 font-sans">
       <div
@@ -189,46 +192,64 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Unfolding 3D-backed feature grid — 12 items */}
+      {/* Interactive 3D feature reveal — click the shape to open */}
       <section id="features" className="relative max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06] overflow-hidden">
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-          <FeatureScene />
+        <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
+        <p className="text-gray-500 text-sm mb-4 text-center">Click the shape to see what&apos;s inside.</p>
+
+        <div className="relative h-[340px] mb-4">
+          <FeatureScene isOpen={featuresOpen} onToggle={() => setFeaturesOpen((v) => !v)} />
+          {!featuresOpen && (
+            <motion.div
+              className="absolute inset-x-0 bottom-4 flex justify-center pointer-events-none"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <span className="text-[11px] tracking-wide text-gray-500">CLICK TO REVEAL</span>
+            </motion.div>
+          )}
         </div>
 
-        <div className="relative">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
-          <p className="text-gray-500 text-sm mb-14 text-center">Restraint, not accumulation.</p>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.15 }}
-          >
-            {features.map((f) => {
-              const IconEl = f.icon;
-              return (
-                <motion.div
-                  key={f.title}
-                  variants={unfoldItem}
-                  whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
-                  className="h-full rounded-xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-6 hover:border-[#ff6363]/30 hover:shadow-[0_12px_40px_rgba(255,99,99,0.12)] transition-colors duration-200"
-                  style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
-                >
-                  <div
-                    className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
-                    style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-                  >
-                    <IconEl className="w-4 h-4" strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
-                  <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
+        <AnimatePresence>
+          {featuresOpen && (
+            <motion.div
+              initial={{ opacity: 0, rotateX: -18, y: 30 }}
+              animate={{ opacity: 1, rotateX: 0, y: 0 }}
+              exit={{ opacity: 0, rotateX: -18, y: 30 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 24, delay: 0.15 }}
+              style={{ transformPerspective: 1000 }}
+            >
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="show"
+              >
+                {features.map((f) => {
+                  const IconEl = f.icon;
+                  return (
+                    <motion.div
+                      key={f.title}
+                      variants={unfoldItem}
+                      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
+                      className="h-full rounded-xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-6 hover:border-[#ff6363]/30 hover:shadow-[0_12px_40px_rgba(255,99,99,0.12)] transition-colors duration-200"
+                      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
+                        style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                      >
+                        <IconEl className="w-4 h-4" strokeWidth={1.5} />
+                      </div>
+                      <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
+                      <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Showcase — larger in-depth capability spotlight, Raycast "Magic at your fingertips" beat */}

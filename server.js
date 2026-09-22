@@ -14,6 +14,8 @@ import { WebSocketServer } from 'ws';
 import { randomUUID } from 'node:crypto';
 import { getWidgetConfig } from './lib/db/db.mjs';
 import { verifyJwt } from './lib/security/jwt.mjs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
 
 
 function randomUUIDFallback() {
@@ -51,7 +53,7 @@ app.prepare().then(() => {
 
   const wss = new WebSocketServer({ noServer: true });
 
-      server.on('upgrade', (req, socket, head) => {
+  server.on('upgrade', (req, socket, head) => {
     const { pathname, query } = parse(req.url, true);
     if (pathname !== '/api/ws') {
       socket.destroy();
@@ -79,7 +81,7 @@ app.prepare().then(() => {
     });
   });
 
-    wss.on('connection', (ws, req) => {
+  wss.on('connection', (ws, req) => {
     const { query } = parse(req.url, true);
     const sessionId = query.sessionId || randomUUID();
     const ip = req.socket.remoteAddress || 'unknown';
@@ -89,12 +91,27 @@ app.prepare().then(() => {
   });
 
   setInterval(heartbeatSweep, 30000);
+
   setInterval(() => {
-  const result = purgeOldData(30);
-  logger.info(result, 'daily data retention purge complete');
-}, 24 * 60 * 60 * 1000);
+    const result = purgeOldData(30);
+    logger.info(result, 'daily data retention purge complete');
+  }, 24 * 60 * 60 * 1000);
+
+  // ⚠️ TEMPORARY: running every 1 minute for testing. Restore to 24 * 60 * 60 * 1000 after confirming.
+  setInterval(() => {
+    try {
+      const dbPath = path.join(process.cwd(), 'chat.db');
+      const backupDir = path.join(process.cwd(), 'backups');
+      if (!existsSync(backupDir)) mkdirSync(backupDir);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      copyFileSync(dbPath, path.join(backupDir, `chat-${timestamp}.db`));
+      logger.info('daily backup complete');
+    } catch (err) {
+      logger.error({ err }, 'daily backup failed');
+    }
+ }, 24 * 60 * 60 * 1000);
 
   server.listen(port, () => {
-  logger.info(`Ready on http://localhost:${port}`);
-});
+    logger.info(`Ready on http://localhost:${port}`);
+  });
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import Script from 'next/script';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Logo from '../components/Logo';
 import FeatureScene from '../components/FeatureScene';
@@ -12,6 +12,8 @@ import {
   KeyRound, Gauge, Paintbrush,
 } from 'lucide-react';
 import Reveal from '../components/Reveal';
+
+type SceneState = 'idle' | 'entering' | 'inside' | 'exiting';
 
 const features = [
   { icon: Lock, title: 'Fully isolated embed', body: 'Shadow DOM keeps every style and script sealed off from the host page.' },
@@ -34,12 +36,46 @@ const stack = [
 ];
 
 export default function Home() {
-  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [sceneState, setSceneState] = useState<SceneState>('idle');
   const shouldReduceMotion = useReducedMotion();
 
-  const handleToggle = () => {
-    setFeaturesOpen((v) => !v);
-  };
+  const isInside = sceneState === 'inside';
+  const isTransitioning = sceneState === 'entering' || sceneState === 'exiting';
+
+  const enter = useCallback(() => {
+    if (sceneState !== 'idle') return;
+    setSceneState('entering');
+    setTimeout(() => setSceneState('inside'), shouldReduceMotion ? 0 : 1000);
+  }, [sceneState, shouldReduceMotion]);
+
+  const exit = useCallback(() => {
+    if (sceneState !== 'inside') return;
+    setSceneState('exiting');
+    setTimeout(() => setSceneState('idle'), shouldReduceMotion ? 0 : 1000);
+  }, [sceneState, shouldReduceMotion]);
+
+  // Escape key exits
+  useEffect(() => {
+    if (!isInside) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') exit();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isInside, exit]);
+
+  // Lock body scroll while inside
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isInside) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isInside]);
 
   return (
     <div className="relative min-h-screen bg-[#08090b] text-gray-200 antialiased overflow-x-hidden selection:bg-violet-500/30 font-sans">
@@ -197,121 +233,180 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive 3D feature reveal — click the bubble to enter and open */}
+      {/* ============================================================
+          INTERACTIVE 3D BUBBLE — click to enter, features inside
+          ============================================================ */}
       <section
         id="features"
-        className="relative max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06] overflow-hidden"
+        className="relative max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]"
       >
-        {/* Cinematic dim overlay when open */}
+        {/* Outer dark overlay when entering/inside */}
         <motion.div
-          className="fixed inset-0 bg-black/40 pointer-events-none z-20"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-20"
           initial={false}
-          animate={{ opacity: featuresOpen ? 1 : 0 }}
-          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, ease: 'easeOut' }}
+          animate={{ opacity: isInside || sceneState === 'entering' ? 1 : 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.7, ease: 'easeOut' }}
         />
 
         <div className="relative z-30">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">
-            There&apos;s a reason for every detail.
-          </h2>
-          <p className="text-gray-500 text-sm mb-4 text-center">
-            Click the bubble to enter and see what&apos;s inside.
-          </p>
+          {/* Section header (hidden when inside) */}
+          <motion.div
+            animate={{ opacity: isInside ? 0 : 1, y: isInside ? -8 : 0 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4 }}
+            className="mb-4"
+          >
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">
+              There&apos;s a reason for every detail.
+            </h2>
+            <p className="text-gray-500 text-sm text-center">
+              Click the bubble to step inside.
+            </p>
+          </motion.div>
 
-          {/* Canvas wrapper with cinematic push-in */}
+          {/* The bubble / interior container */}
           <motion.div
             layout
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
-                : { duration: 0.75, ease: [0.16, 1, 0.3, 1] }
+                : { duration: 1.0, ease: [0.16, 1, 0.3, 1] }
             }
-            animate={{ height: featuresOpen ? 480 : 340 }}
-            className="relative w-full max-w-3xl mx-auto rounded-3xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent shadow-[0_20px_80px_-20px_rgba(255,99,99,0.15)] mb-4"
+            animate={{
+              height: isInside ? '85vh' : 340,
+              borderRadius: isInside ? '24px' : '24px',
+            }}
+            className="relative w-full mx-auto overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent shadow-[0_20px_80px_-20px_rgba(255,99,99,0.25)]"
           >
-            {/* Inner camera push-in */}
-            <motion.div
-              animate={{ scale: featuresOpen ? 1.09 : 1.0 }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
-              }
-              className="absolute inset-0"
-            >
-              <FeatureScene isOpen={featuresOpen} onToggle={handleToggle} />
-            </motion.div>
-
-            {/* Floating hint */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-              <AnimatePresence mode="wait">
-                {!featuresOpen ? (
-                  <motion.div
-                    key="hint-idle"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#ff6363]/30 backdrop-blur-md text-[11px] font-semibold tracking-wider text-zinc-300 shadow-[0_0_24px_rgba(255,99,99,0.2)]"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff6363] animate-ping" />
-                    <span>CLICK TO ENTER & REVEAL</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="hint-open"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#8b5cf6]/30 backdrop-blur-md text-[11px] font-semibold tracking-wider text-zinc-300 shadow-[0_0_24px_rgba(139,92,246,0.2)]"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]" />
-                    <span>CLICK TO CLOSE</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* 3D canvas */}
+            <div className="absolute inset-0">
+              <FeatureScene
+                state={sceneState}
+                onToggle={() => {
+                  if (sceneState === 'idle') enter();
+                }}
+              />
             </div>
-          </motion.div>
 
-          {/* Feature grid — unfolds out of the bubble with 3D rotateX */}
-          <div className="relative perspective-[1200px]">
+            {/* Interior feature grid — visible when inside */}
             <AnimatePresence>
-              {featuresOpen && (
+              {isInside && (
                 <motion.div
-                  key="features-grid"
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
-                  exit="exit"
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto"
-                  style={{ transformOrigin: 'top center' }}
+                  key="interior-features"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 40 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }
+                  }
+                  className="absolute inset-0 overflow-y-auto px-6 py-16 z-10"
+                  style={{ perspective: '1200px' }}
                 >
-                  {features.map((f) => {
-                    const IconEl = f.icon;
-                    return (
-                      <motion.div
-                        key={f.title}
-                        variants={unfoldItem}
-                        style={{ transformOrigin: 'top center' }}
-                        whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 18 } }}
-                        className="h-full rounded-xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm p-6 hover:border-[#ff6363]/30 hover:shadow-[0_12px_40px_rgba(255,99,99,0.12)] transition-colors duration-200"
-                      >
-                        <div
-                          className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
-                          style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-                        >
-                          <IconEl className="w-4 h-4" strokeWidth={1.5} />
-                        </div>
-                        <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
-                        <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
-                      </motion.div>
-                    );
-                  })}
+                  <div className="max-w-5xl mx-auto">
+                    <p className="text-center text-[11px] tracking-[0.2em] text-white/40 mb-8">
+                      INSIDE THE BUBBLE
+                    </p>
+
+                    <motion.div
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                      variants={staggerContainer}
+                      initial="hidden"
+                      animate="show"
+                      style={{ transformOrigin: 'top center' }}
+                    >
+                      {features.map((f) => {
+                        const IconEl = f.icon;
+                        return (
+                          <motion.div
+                            key={f.title}
+                            variants={unfoldItem}
+                            whileHover={{
+                              y: -6,
+                              transition: { type: 'spring', stiffness: 300, damping: 18 },
+                            }}
+                            className="h-full rounded-xl border border-white/[0.1] bg-white/[0.05] backdrop-blur-md p-6 hover:border-[#ff6363]/40 hover:shadow-[0_12px_40px_rgba(255,99,99,0.18)] transition-colors duration-200"
+                            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+                          >
+                            <div
+                              className="w-9 h-9 rounded-lg border border-white/[0.1] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
+                              style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                            >
+                              <IconEl className="w-4 h-4" strokeWidth={1.5} />
+                            </div>
+                            <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
+                            <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+
+                    <p className="text-center text-[11px] text-white/30 mt-12">
+                      Press ESC or click EXIT to step back out
+                    </p>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+
+            {/* Exit button (top-right, only when inside) */}
+            <AnimatePresence>
+              {isInside && (
+                <motion.button
+                  key="exit-btn"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3, delay: shouldReduceMotion ? 0 : 0.5 }}
+                  onClick={exit}
+                  className="absolute top-5 right-5 z-30 rounded-full border border-white/15 bg-black/60 backdrop-blur-md px-4 py-1.5 text-[11px] font-semibold tracking-wider text-white/85 hover:text-white hover:border-white/30 transition-all duration-200"
+                >
+                  EXIT ✕
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Idle hint (only when idle) */}
+            <AnimatePresence>
+              {sceneState === 'idle' && (
+                <motion.div
+                  key="hint-idle"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                >
+                  <motion.div
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#ff6363]/30 backdrop-blur-md text-[11px] font-semibold tracking-wider text-zinc-300 shadow-[0_0_24px_rgba(255,99,99,0.2)]"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff6363]" />
+                    <span>CLICK BUBBLE TO ENTER</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Entering/Exiting micro-label */}
+            <AnimatePresence>
+              {isTransitioning && (
+                <motion.div
+                  key="transitioning"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                >
+                  <span className="text-[11px] tracking-[0.2em] text-white/50">
+                    {sceneState === 'entering' ? 'ENTERING…' : 'EXITING…'}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </section>
 

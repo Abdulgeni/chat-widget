@@ -1,49 +1,31 @@
 'use client';
 
 import Script from 'next/script';
+import {
+  ShieldCheck, Zap, FileText, Lock, Clock, Settings2,
+  MessageCircle, Database, Radio, Sparkles, ArrowRight,
+} from 'lucide-react';
 
 const features = [
-  { title: 'Fully isolated embed', body: 'Shadow DOM keeps every style and script sealed off from the host page.' },
-  { title: 'Real-time streaming', body: 'WebSocket-first with automatic SSE and HTTP fallback.' },
-  { title: 'Document-aware', body: 'Upload a document, ask real questions about it.' },
-  { title: 'Per-client security', body: 'Domain allowlisting and rate limiting, scoped per client.' },
-  { title: 'Persistent history', body: 'Close the tab, return later — nothing is lost.' },
-  { title: 'No-code onboarding', body: 'A domain, a color, a script tag. No deploys.' },
+  { icon: Lock, title: 'Fully isolated embed', body: 'Shadow DOM keeps every style and script sealed off from the host page.' },
+  { icon: Zap, title: 'Real-time streaming', body: 'WebSocket-first with automatic SSE and HTTP fallback.' },
+  { icon: FileText, title: 'Document-aware', body: 'Upload a document, ask real questions about it.' },
+  { icon: ShieldCheck, title: 'Per-client security', body: 'Domain allowlisting and rate limiting, scoped per client.' },
+  { icon: Clock, title: 'Persistent history', body: 'Close the tab, return later — nothing is lost.' },
+  { icon: Settings2, title: 'No-code onboarding', body: 'A domain, a color, a script tag. No deploys.' },
+  { icon: MessageCircle, title: 'Multi-tab sync', body: 'Open the site in two tabs — one conversation, always in sync.' },
+  { icon: Database, title: 'Automatic backups', body: 'The database backs itself up daily, unattended.' },
+  { icon: Sparkles, title: 'Quick replies', body: 'Guided prompts that reduce typing and speed up resolution.' },
 ];
 
-function Icon({ name }: { name: string }) {
-  const common = 'w-4 h-4';
-  switch (name) {
-    case 'shield':
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" /></svg>;
-    case 'bolt':
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" /></svg>;
-    case 'doc':
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 3h7l5 5v13H7V3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 3v5h5" /></svg>;
-    case 'lock':
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5" /><path strokeLinecap="round" d="M8 11V7a4 4 0 018 0v4" /></svg>;
-    case 'clock':
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path strokeLinecap="round" d="M12 7v5l3 2" /></svg>;
-    default:
-      return <svg className={common} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" /><path strokeLinecap="round" d="M12 3v4M12 17v4M3 12h4M17 12h4" /></svg>;
-  }
-}
-
-const icons = ['lock', 'bolt', 'doc', 'shield', 'clock', 'gear'];
-
-function Ornament() {
-  return (
-    <div className="flex items-center justify-center gap-3 my-2" aria-hidden>
-      <span className="h-px w-12 bg-gradient-to-r from-transparent to-white/15" />
-      <span className="w-1 h-1 rotate-45 bg-white/25" />
-      <span className="h-px w-12 bg-gradient-to-l from-transparent to-white/15" />
-    </div>
-  );
-}
+const stack = [
+  { name: 'Gemini AI' }, { name: 'WebSocket' }, { name: 'Shadow DOM' },
+  { name: 'SQLite' }, { name: 'Railway' }, { name: 'Next.js' },
+];
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-[#08090a] text-[#c9c9cf] antialiased overflow-x-hidden selection:bg-rose-500/25">
+    <div className="relative min-h-screen bg-[#08090b] text-gray-200 antialiased overflow-x-hidden selection:bg-violet-500/30 font-sans">
       <div
         className="pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay"
         style={{
@@ -51,156 +33,216 @@ export default function Home() {
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
       />
+      <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-gradient-to-br from-rose-600/[0.12] via-fuchsia-600/[0.07] to-violet-600/[0.10] rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-gradient-to-br from-rose-600/[0.12] via-fuchsia-600/[0.06] to-violet-600/[0.10] rounded-full blur-[150px] pointer-events-none" />
-
-      {/* Nav */}
-      <nav className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-[#08090a]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      {/* Floating glass nav */}
+      <nav className="sticky top-4 z-40 w-full px-4">
+        <div className="max-w-3xl mx-auto rounded-full border border-white/[0.08] bg-[#0a0b0d]/80 backdrop-blur-xl px-5 h-14 flex items-center justify-between shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-rose-500 to-violet-500 flex items-center justify-center">
-              <span className="font-[family-name:var(--font-display)] italic text-white text-xs">c</span>
+              <span className="font-bold text-white text-xs">C</span>
             </div>
-            <span className="text-sm font-medium text-white/90 tracking-tight">ChatWidget</span>
+            <span className="text-[13px] font-semibold text-white tracking-tight">ChatWidget</span>
           </div>
-          <div className="hidden md:flex items-center gap-10 text-[13px] text-white/45">
-            <a href="#features" className="hover:text-white/90 transition-colors duration-300">Features</a>
-            <a href="#embed" className="hover:text-white/90 transition-colors duration-300">Embed</a>
-            <a href="#engineering" className="hover:text-white/90 transition-colors duration-300">Engineering</a>
+          <div className="hidden md:flex items-center gap-8 text-[13px] text-gray-400">
+            <a href="#features" className="hover:text-white transition-colors duration-200">Features</a>
+            <a href="#showcase" className="hover:text-white transition-colors duration-200">Showcase</a>
+            <a href="#embed" className="hover:text-white transition-colors duration-200">Embed</a>
+            <a href="#engineering" className="hover:text-white transition-colors duration-200">Engineering</a>
           </div>
           <a
             href="/api/health"
-            className="rounded-full border border-white/10 px-4 py-1.5 text-[11px] tracking-wide text-white/70 hover:text-white hover:border-white/20 transition-all duration-300"
+            className="rounded-full border border-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white/80 hover:text-white hover:border-white/20 transition-all duration-200"
           >
-            System status
+            Status
           </a>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative max-w-2xl mx-auto px-6 pt-32 pb-8 text-center z-10">
-        <p
-          className="text-[11px] tracking-[0.15em] text-white/35 mb-8 opacity-0 animate-[fadeIn_0.7s_ease_forwards]"
+      <section className="relative max-w-2xl mx-auto px-6 pt-24 pb-10 text-center z-10">
+        <div
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-300 mb-8 opacity-0 animate-[fadeIn_0.6s_ease_forwards]"
           style={{ animationDelay: '0.1s' }}
         >
-          LIVE ON THIS PAGE
-        </p>
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+          Live on this page
+        </div>
 
         <h1
-          className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl font-medium tracking-tight mb-8 leading-[1.12] text-white/95 opacity-0 animate-[fadeIn_0.8s_ease_forwards]"
-          style={{ animationDelay: '0.22s' }}
+          className="text-5xl sm:text-6xl font-semibold tracking-tight mb-6 leading-[1.1] text-white opacity-0 animate-[fadeIn_0.7s_ease_forwards]"
+          style={{ animationDelay: '0.2s' }}
         >
-          Your visitors&apos; questions,
+          Your visitors&apos; questions.
           <br />
-          <span className="italic bg-gradient-to-r from-rose-300 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
-            answered instantly.
+          <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+            Answered instantly.
           </span>
         </h1>
 
         <p
-          className="text-white/40 text-[15px] max-w-md mx-auto mb-12 leading-relaxed opacity-0 animate-[fadeIn_0.8s_ease_forwards]"
-          style={{ animationDelay: '0.38s' }}
+          className="text-gray-400 text-base max-w-md mx-auto mb-10 leading-relaxed opacity-0 animate-[fadeIn_0.7s_ease_forwards]"
+          style={{ animationDelay: '0.35s' }}
         >
-          A single script tag. Real-time streaming AI, quietly isolated from
-          your site, live in under a minute.
+          One script tag. Real-time streaming AI, isolated from your site, live
+          in under a minute.
         </p>
 
         <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-24 opacity-0 animate-[fadeIn_0.8s_ease_forwards]"
-          style={{ animationDelay: '0.52s' }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 opacity-0 animate-[fadeIn_0.7s_ease_forwards]"
+          style={{ animationDelay: '0.5s' }}
         >
           <a
             href="#embed"
-            className="relative w-full sm:w-auto px-7 py-3 rounded-full bg-white text-black text-[13px] font-medium tracking-wide overflow-hidden group"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-gray-200 transition-colors duration-200 shadow-[0_1px_0_rgba(255,255,255,0.4)_inset]"
           >
-            <span className="absolute inset-x-0 top-0 h-1/2 bg-white/40 rounded-t-full pointer-events-none" />
-            <span className="relative">Get the embed code</span>
+            Get the embed code
           </a>
           <a
             href="#features"
-            className="text-[13px] text-white/50 hover:text-white/90 transition-colors duration-300 tracking-wide"
+            className="w-full sm:w-auto rounded-lg border border-white/[0.08] bg-white/[0.03] px-6 py-2.5 text-[13px] font-medium text-white/85 hover:bg-white/[0.06] transition-colors duration-200"
           >
             See how it works
           </a>
         </div>
 
-        {/* Mockup */}
+        {/* Tactile mockup */}
         <div
-          className="max-w-xl mx-auto rounded-2xl p-px bg-gradient-to-b from-white/15 via-white/[0.04] to-white/[0.08] opacity-0 animate-[fadeIn_0.9s_ease_forwards]"
-          style={{ animationDelay: '0.66s' }}
+          className="max-w-xl mx-auto rounded-2xl p-px bg-gradient-to-b from-rose-500/30 via-white/10 to-violet-500/25 shadow-2xl shadow-rose-900/10 opacity-0 animate-[fadeIn_0.8s_ease_forwards]"
+          style={{ animationDelay: '0.65s' }}
         >
-          <div className="rounded-2xl bg-[#0c0d10] p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-[11px] text-white/30">
+          <div className="rounded-2xl bg-[#0a0b0d] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] p-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-[11px] text-gray-500">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-white/[0.08]" />
                 <span className="w-2 h-2 rounded-full bg-white/[0.08]" />
                 <span className="w-2 h-2 rounded-full bg-white/[0.08]" />
                 <span className="pl-2 font-mono">yoursite.com</span>
               </div>
-              <div className="font-mono text-[10px] text-white/25">widget active</div>
+              <div
+                className="font-mono text-[10px] text-gray-400 bg-[#050607] px-2 py-1 rounded border border-white/[0.06]"
+                style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)' }}
+              >
+                widget active
+              </div>
             </div>
-            <div className="pt-5 pb-1 text-white/30 text-[13px] font-mono">
-              The real widget is in the corner of this page. →
+            <div className="pt-4 pb-1 flex items-center gap-3">
+              <Radio className="w-4 h-4 text-rose-400 flex-shrink-0" strokeWidth={1.5} />
+              <span className="text-[13px] text-gray-500">The real widget runs in the corner of this page</span>
             </div>
           </div>
         </div>
       </section>
 
-      <Ornament />
-
       {/* Statement */}
-      <section className="max-w-xl mx-auto px-6 py-28 text-center">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl text-white/85 leading-snug">
+      <section className="max-w-xl mx-auto px-6 py-20 text-center border-t border-white/[0.06] mt-14">
+        <h2 className="text-2xl sm:text-3xl font-semibold text-white/90 leading-snug">
           It isn&apos;t about adding a chatbot.
           <br />
-          <span className="italic text-white/40">It&apos;s about not losing the visitor who almost left.</span>
+          <span className="text-gray-500">It&apos;s about not losing the visitor who almost left.</span>
         </h2>
       </section>
 
-      <Ornament />
+      {/* Tech stack badge row — Raycast "there's an extension for that" beat */}
+      <section className="max-w-3xl mx-auto px-6 py-10 border-t border-white/[0.06]">
+        <p className="text-center text-[11px] tracking-wide text-gray-500 mb-6">BUILT ON A REAL STACK, NOT A DEMO</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {stack.map((s) => (
+            <span
+              key={s.name}
+              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-[12px] text-gray-300"
+            >
+              {s.name}
+            </span>
+          ))}
+        </div>
+      </section>
 
       {/* Stats */}
-      <section className="max-w-3xl mx-auto px-6 py-16">
+      <section className="max-w-3xl mx-auto px-6 py-14 border-t border-white/[0.06]">
         <div className="grid grid-cols-3 gap-8">
           {[
             { num: '<1kb', lbl: 'loader footprint' },
             { num: '3', lbl: 'layer transport fallback' },
-            { num: '24h', lbl: 'automatic backup cycle' },
+            { num: '24h', lbl: 'backup cycle' },
           ].map((s) => (
             <div key={s.lbl} className="text-center">
-              <div className="font-[family-name:var(--font-display)] italic text-3xl text-white/85">{s.num}</div>
-              <div className="text-[11px] text-white/35 mt-2 tracking-wide">{s.lbl}</div>
+              <div className="text-3xl font-semibold text-white">{s.num}</div>
+              <div className="text-[11px] text-gray-500 mt-2">{s.lbl}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="max-w-5xl mx-auto px-6 py-28">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl text-white/90 mb-3 text-center">
-          There&apos;s a reason for every detail.
-        </h2>
-        <p className="text-white/35 text-sm mb-16 text-center">Restraint, not accumulation.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/[0.06] rounded-2xl overflow-hidden border border-white/[0.06]">
-          {features.map((f, i) => (
-            <div key={f.title} className="bg-[#0a0b0d] p-8 hover:bg-[#0d0e11] transition-colors duration-300">
-              <div className="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center mb-5 text-white/50">
-                <Icon name={icons[i]} />
+      {/* Expanded feature grid — 9 items */}
+      <section id="features" className="max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]">
+        <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">There&apos;s a reason for every detail.</h2>
+        <p className="text-gray-500 text-sm mb-14 text-center">Restraint, not accumulation.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {features.map((f) => {
+            const IconEl = f.icon;
+            return (
+              <div
+                key={f.title}
+                className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-6 hover:border-white/[0.15] hover:bg-white/[0.035] transition-colors duration-200"
+                style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg border border-white/[0.08] bg-[#0d0e11] flex items-center justify-center mb-5 text-violet-300"
+                  style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+                >
+                  <IconEl className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
+                <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
               </div>
-              <h3 className="text-[14px] font-medium text-white/85 mb-2 tracking-wide">{f.title}</h3>
-              <p className="text-white/40 text-[13px] leading-relaxed">{f.body}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      <Ornament />
+      {/* Showcase — larger in-depth capability spotlight, Raycast "Magic at your fingertips" beat */}
+      <section id="showcase" className="max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3 py-1 text-[11px] text-violet-300 mb-5">
+              Retrieval-augmented
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-4 leading-snug">
+              It reads the document.
+              <br />
+              Then it answers from it.
+            </h2>
+            <p className="text-gray-400 text-[14px] leading-relaxed max-w-sm">
+              Visitors can upload a PDF mid-conversation. The widget chunks it,
+              embeds it, and grounds its next answer in what&apos;s actually
+              written there — not a guess from general training data.
+            </p>
+          </div>
+          <div
+            className="rounded-2xl border border-white/[0.08] bg-[#0a0b0d] p-5"
+            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.4)' }}
+          >
+            <div className="flex items-center gap-2 text-[11px] text-gray-500 pb-3 border-b border-white/[0.06]">
+              <FileText className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <span className="font-mono">cover-letter.pdf</span>
+            </div>
+            <div className="pt-4 space-y-2.5">
+              <div className="rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-gray-300 max-w-[85%]">
+                What role is this letter for?
+              </div>
+              <div className="rounded-lg bg-gradient-to-br from-rose-500/15 to-violet-500/15 border border-white/[0.06] px-3 py-2 text-[12px] text-gray-200 max-w-[90%] ml-auto">
+                Based on the document, it&apos;s an application for a Senior
+                Frontend Engineer position.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Engineering */}
-      <section id="engineering" className="max-w-3xl mx-auto px-6 py-24">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl text-white/90 mb-12 text-center">
-          What we verified, not just claimed.
-        </h2>
+      <section id="engineering" className="max-w-3xl mx-auto px-6 py-24 border-t border-white/[0.06]">
+        <h2 className="text-2xl font-semibold text-white mb-12 text-center">What we verified, not just claimed.</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
           {[
             { k: 'Isolation', v: 'Shadow DOM boundary — confirmed in DevTools, not assumed.' },
@@ -208,39 +250,55 @@ export default function Home() {
             { k: 'Observability', v: 'Structured logs and error tracking on every request path.' },
             { k: 'Data hygiene', v: 'Automatic daily backups and retention purging, unattended.' },
           ].map((h) => (
-            <div key={h.k}>
-              <div className="text-[13px] font-medium text-white/80 mb-1.5 tracking-wide">{h.k}</div>
-              <div className="text-[13px] text-white/40 leading-relaxed">{h.v}</div>
+            <div key={h.k} className="flex gap-3">
+              <span className="w-1 h-1 mt-2 rounded-full bg-rose-400 flex-shrink-0" />
+              <div>
+                <div className="text-[13px] font-semibold text-white mb-1">{h.k}</div>
+                <div className="text-[13px] text-gray-400 leading-relaxed">{h.v}</div>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <Ornament />
-
       {/* Embed */}
-      <section id="embed" className="max-w-2xl mx-auto px-6 py-24">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl text-white/90 mb-2 text-center">
-          One snippet. The whole integration.
-        </h2>
-        <p className="text-white/35 text-[13px] mb-8 text-center">Exactly what a client pastes into their site.</p>
-        <pre className="rounded-xl border border-white/[0.08] bg-black/50 p-5 text-[12px] text-white/50 overflow-x-auto font-mono leading-relaxed">
+      <section id="embed" className="max-w-2xl mx-auto px-6 py-24 border-t border-white/[0.06]">
+        <h2 className="text-2xl font-semibold text-white mb-2 text-center">One snippet. The whole integration.</h2>
+        <p className="text-gray-500 text-[13px] mb-8 text-center">Exactly what a client pastes into their site.</p>
+        <pre
+          className="rounded-xl border border-white/[0.08] bg-[#0a0b0d] p-5 text-[12px] text-gray-300 overflow-x-auto font-mono leading-relaxed"
+          style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
+        >
 {`<script>
 (function(w,d,s,o,f,js,fjs){
   w['ChatWidgetObject']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
   js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
 }(window,document,'script','aiChat','https://your-domain.com/widget.js'));
-aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#4f46e5' } });
+aiChat('init', { appId: 'your-app-id', theme: { primaryColor: '#8b5cf6' } });
 </script>`}
         </pre>
       </section>
 
+      {/* Closing CTA band */}
+      <section className="max-w-3xl mx-auto px-6 py-24 border-t border-white/[0.06] text-center">
+        <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-6 leading-snug">
+          Ready to see it on your own site?
+        </h2>
+        <a
+          href="#embed"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-black text-[13px] font-semibold hover:bg-gray-200 transition-colors duration-200"
+        >
+          Get the embed code
+          <ArrowRight className="w-4 h-4" strokeWidth={2} />
+        </a>
+      </section>
+
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto px-6 py-14 border-t border-white/[0.06] text-[11px] text-white/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="max-w-5xl mx-auto px-6 py-14 border-t border-white/[0.06] text-[11px] text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-4">
         <span>Embeddable AI Chat Widget</span>
         <div className="flex gap-8">
-          <a href="/admin" className="hover:text-white/60 transition-colors duration-300">Admin</a>
-          <a href="/api/health" className="hover:text-white/60 transition-colors duration-300">Status</a>
+          <a href="/admin" className="hover:text-gray-300 transition-colors duration-200">Admin</a>
+          <a href="/api/health" className="hover:text-gray-300 transition-colors duration-200">Status</a>
         </div>
       </footer>
 

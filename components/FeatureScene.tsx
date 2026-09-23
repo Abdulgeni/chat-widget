@@ -1,15 +1,20 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Billboard, Text, OrbitControls } from '@react-three/drei';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Group, Mesh, Points } from 'three';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 type SceneState = 'idle' | 'entering' | 'inside' | 'exiting';
 
-/**
- * Respect prefers-reduced-motion.
- */
+export interface FeatureItem {
+  title: string;
+  body: string;
+  icon?: unknown;
+}
+
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -23,9 +28,6 @@ function useReducedMotion() {
   return reduced;
 }
 
-/**
- * Critically damped spring.
- */
 function springStep(
   current: number,
   velocity: number,
@@ -41,9 +43,6 @@ function springStep(
   return [next, nextVel] as const;
 }
 
-/**
- * Camera rig — dollies between the outer view and the inside view.
- */
 function CameraRig({ state, reducedMotion }: { state: SceneState; reducedMotion: boolean }) {
   const { camera } = useThree();
   const zRef = useRef(5);
@@ -52,8 +51,10 @@ function CameraRig({ state, reducedMotion }: { state: SceneState; reducedMotion:
   const lookYVel = useRef(0);
 
   useFrame((_, delta) => {
-    const insideTarget = state === 'inside' || state === 'entering' ? 0.35 : 5;
-    const lookTarget = state === 'inside' || state === 'entering' ? -1.2 : 0;
+    if (state === 'inside') return;
+
+    const insideTarget = state === 'entering' ? 0.35 : 5;
+    const lookTarget = state === 'entering' ? -1.2 : 0;
 
     if (reducedMotion) {
       zRef.current = insideTarget;
@@ -74,9 +75,6 @@ function CameraRig({ state, reducedMotion }: { state: SceneState; reducedMotion:
   return null;
 }
 
-/**
- * Radial gradient glow behind the bubble. Fades out when inside.
- */
 function BackgroundGlow({ dim }: { dim: boolean }) {
   const glowMat = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -127,9 +125,6 @@ function BackgroundGlow({ dim }: { dim: boolean }) {
   );
 }
 
-/**
- * Orbiting particle flecks. Fade & scatter when entering.
- */
 function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; reducedMotion: boolean }) {
   const pointsRef = useRef<Points>(null);
   const count = 26;
@@ -218,9 +213,6 @@ function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; redu
   );
 }
 
-/**
- * The 3D chat bubble. In "inside" mode, the shell becomes translucent walls.
- */
 function ChatBubble({
   state,
   onToggle,
@@ -318,7 +310,6 @@ function ChatBubble({
     const isOpen = state === 'entering' || state === 'inside';
     const isInside = state === 'inside';
 
-    // Group float + hover scale
     if (groupRef.current) {
       if (!reducedMotion) {
         groupRef.current.position.y = isInside ? 0 : Math.sin(t * 1.4) * 0.05;
@@ -343,7 +334,6 @@ function ChatBubble({
       groupRef.current.scale.set(cs, cs, cs);
     }
 
-    // Top half lifts
     const targetTopY = isOpen ? 0.8 : 0;
     if (reducedMotion) topYRef.current = targetTopY;
     else {
@@ -356,7 +346,6 @@ function ChatBubble({
       topGroupRef.current.rotation.x = (topYRef.current / 0.8) * -0.28;
     }
 
-    // Bottom half drops
     const targetBotY = isOpen ? -0.5 : 0;
     if (reducedMotion) botYRef.current = targetBotY;
     else {
@@ -369,7 +358,6 @@ function ChatBubble({
       bottomGroupRef.current.rotation.x = (botYRef.current / -0.5) * 0.16;
     }
 
-    // Tail curls
     const targetTailScale = isOpen ? 0.0001 : 1;
     if (reducedMotion) tailScaleRef.current = targetTailScale;
     else {
@@ -381,7 +369,6 @@ function ChatBubble({
       tailGroupRef.current.scale.setScalar(tailScaleRef.current);
     }
 
-    // Core
     const targetCoreScale = isOpen ? 1 : 0.0001;
     if (reducedMotion) coreScaleRef.current = targetCoreScale;
     else {
@@ -396,7 +383,6 @@ function ChatBubble({
       coreMaterial.uniforms.uIntensity.value = isOpen ? 1.5 : 0.0;
     }
 
-    // Interior walls fade in when inside
     const targetInnerOpacity = isInside ? 0.22 : 0;
     if (reducedMotion) innerOpacityRef.current = targetInnerOpacity;
     else {
@@ -411,7 +397,6 @@ function ChatBubble({
       innerShellRef.current.visible = innerOpacityRef.current > 0.005;
     }
 
-    // Shell opacity
     const splitProgress = Math.min(1, Math.max(0, topYRef.current / 0.8));
     const shellOpacity = THREE.MathUtils.lerp(1.0, 0.28, splitProgress);
     const emissiveInt = hovered && !isOpen ? 0.25 : 0.12;
@@ -448,13 +433,11 @@ function ChatBubble({
         setHovered(false);
       }}
     >
-      {/* Invisible hit target */}
       <mesh>
         <sphereGeometry args={[1.35, 16, 16]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      {/* Top half */}
       <group ref={topGroupRef} scale={[1, 0.85, 0.9]}>
         <mesh geometry={topGeo}>
           <meshPhysicalMaterial
@@ -475,7 +458,6 @@ function ChatBubble({
         </mesh>
       </group>
 
-      {/* Bottom half */}
       <group ref={bottomGroupRef} scale={[1, 0.85, 0.9]}>
         <mesh geometry={botGeo}>
           <meshPhysicalMaterial
@@ -496,7 +478,6 @@ function ChatBubble({
         </mesh>
       </group>
 
-      {/* Tail */}
       <group ref={tailGroupRef} position={[-0.66, -0.62, 0]} rotation={[0, 0, Math.PI * 0.75]}>
         <mesh geometry={tailGeo}>
           <meshPhysicalMaterial
@@ -513,10 +494,8 @@ function ChatBubble({
         </mesh>
       </group>
 
-      {/* Glowing core */}
       <mesh ref={coreMeshRef} geometry={coreGeo} material={coreMaterial} />
 
-      {/* Interior walls — visible only when inside */}
       <group ref={innerShellRef} visible={false}>
         <mesh geometry={innerGeo}>
           <meshBasicMaterial
@@ -535,19 +514,223 @@ function ChatBubble({
   );
 }
 
-/**
- * Main export.
- */
+function useLayoutPositions(count: number, radius: number) {
+  return useMemo(() => {
+    const positions: [number, number, number][] = [];
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < count; i++) {
+      const y = 1 - (i / Math.max(1, count - 1)) * 2;
+      const r = Math.sqrt(Math.max(0, 1 - y * y));
+      const theta = goldenAngle * i;
+      const jitter = () => (Math.random() - 0.5) * 0.35;
+      const x = Math.cos(theta) * r * radius + jitter();
+      const yy = y * radius * 0.75 - 1.1 + jitter();
+      const z = Math.sin(theta) * r * radius + jitter();
+      positions.push([x, yy, z]);
+    }
+    return positions;
+  }, [count, radius]);
+}
+
+function FeaturePanel({
+  feature,
+  position,
+  index,
+  visible,
+  reducedMotion,
+}: {
+  feature: FeatureItem;
+  position: [number, number, number];
+  index: number;
+  visible: boolean;
+  reducedMotion: boolean;
+}) {
+  const groupRef = useRef<Group>(null);
+  const panelRef = useRef<Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  const scaleRef = useRef(0.0001);
+  const scaleVel = useRef(0);
+  const hoverRef = useRef(1);
+  const hoverVel = useRef(0);
+
+  useEffect(() => {
+    if (!visible) {
+      setStarted(false);
+      return;
+    }
+    const delay = reducedMotion ? 0 : index * 70;
+    const timeout = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(timeout);
+  }, [visible, index, reducedMotion]);
+
+  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
+  const driftSpeed = useMemo(() => 0.25 + Math.random() * 0.25, []);
+
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime;
+    const target = visible && started ? 1 : 0.0001;
+
+    if (reducedMotion) {
+      scaleRef.current = target;
+    } else {
+      const [s, v] = springStep(scaleRef.current, scaleVel.current, target, delta, 9, 5.5);
+      scaleRef.current = s;
+      scaleVel.current = v;
+    }
+
+    const targetHover = hovered ? 1.12 : 1;
+    if (reducedMotion) {
+      hoverRef.current = targetHover;
+    } else {
+      const [s, v] = springStep(hoverRef.current, hoverVel.current, targetHover, delta, 14, 6.5);
+      hoverRef.current = s;
+      hoverVel.current = v;
+    }
+
+    if (groupRef.current) {
+      const finalScale = Math.max(0.0001, scaleRef.current) * hoverRef.current;
+      groupRef.current.scale.setScalar(finalScale);
+
+      if (!reducedMotion) {
+        groupRef.current.position.set(
+          position[0] + Math.sin(t * driftSpeed + phase) * 0.12,
+          position[1] + Math.cos(t * driftSpeed * 0.8 + phase) * 0.1,
+          position[2] + Math.sin(t * driftSpeed * 0.6 + phase * 1.3) * 0.12
+        );
+      } else {
+        groupRef.current.position.set(...position);
+      }
+    }
+    if (panelRef.current && !reducedMotion) {
+      panelRef.current.rotation.z = Math.sin(t * 0.3 + phase) * 0.04;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position}>
+      <Billboard>
+        <group
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            setHovered(true);
+          }}
+          onPointerOut={() => setHovered(false)}
+        >
+          <mesh ref={panelRef}>
+            <planeGeometry args={[1.5, 0.62]} />
+            <meshPhysicalMaterial
+              color={hovered ? '#2a1520' : '#150d12'}
+              transmission={0.35}
+              roughness={0.4}
+              thickness={0.3}
+              transparent
+              opacity={0.88}
+              emissive={hovered ? '#ff6363' : '#8b5cf6'}
+              emissiveIntensity={hovered ? 0.18 : 0.06}
+            />
+          </mesh>
+          <lineSegments position={[0, 0, 0.001]}>
+            <edgesGeometry args={[new THREE.PlaneGeometry(1.5, 0.62)]} />
+            <lineBasicMaterial color={hovered ? '#ff6363' : '#ffffff'} transparent opacity={hovered ? 0.6 : 0.12} />
+          </lineSegments>
+
+          <Text
+            position={[0, 0.15, 0.01]}
+            fontSize={0.09}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={1.3}
+          >
+            {feature.title}
+          </Text>
+          <Text
+            position={[0, -0.08, 0.01]}
+            fontSize={0.052}
+            color="#a3a5ab"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={1.25}
+            lineHeight={1.3}
+          >
+            {feature.body}
+          </Text>
+        </group>
+      </Billboard>
+    </group>
+  );
+}
+
+function FeaturePanels({
+  features,
+  visible,
+  reducedMotion,
+}: {
+  features: FeatureItem[];
+  visible: boolean;
+  reducedMotion: boolean;
+}) {
+  const positions = useLayoutPositions(features.length, 1.7);
+  return (
+    <group>
+      {features.map((f, i) => (
+        <FeaturePanel
+          key={f.title}
+          feature={f}
+          position={positions[i]}
+          index={i}
+          visible={visible}
+          reducedMotion={reducedMotion}
+        />
+      ))}
+    </group>
+  );
+}
+
+function InteriorOrbit({ enabled }: { enabled: boolean }) {
+  const ref = useRef<OrbitControlsImpl>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.target.set(0, -1.2, -1.65);
+      ref.current.update();
+    }
+  }, [enabled]);
+
+  return (
+    <OrbitControls
+      ref={ref}
+      enabled={enabled}
+      enablePan={false}
+      enableZoom
+      minDistance={1.2}
+      maxDistance={2.4}
+      minPolarAngle={0.35}
+      maxPolarAngle={Math.PI - 0.35}
+      rotateSpeed={0.5}
+      zoomSpeed={0.6}
+      enableDamping
+      dampingFactor={0.08}
+    />
+  );
+}
+
 export default function FeatureScene({
   state,
   onToggle,
+  features,
 }: {
   state: SceneState;
   onToggle: () => void;
+  features: FeatureItem[];
 }) {
   const [hovered, setHovered] = useState(false);
   const reducedMotion = useReducedMotion();
-  const isInside = state === 'inside' || state === 'entering';
+  const isInside = state === 'inside';
+  const isEnteringOrInside = state === 'inside' || state === 'entering';
+  const panelsVisible = state === 'inside' || state === 'entering';
 
   return (
     <Canvas
@@ -557,7 +740,8 @@ export default function FeatureScene({
       style={{
         position: 'absolute',
         inset: 0,
-        cursor: hovered && !isInside ? 'pointer' : 'default',
+        cursor: hovered && !isEnteringOrInside ? 'pointer' : isInside ? 'grab' : 'default',
+        touchAction: 'none',
       }}
     >
       <Suspense fallback={null}>
@@ -567,8 +751,8 @@ export default function FeatureScene({
         <directionalLight position={[0, 2, -4]} intensity={1.8} color="#c084fc" />
 
         <CameraRig state={state} reducedMotion={reducedMotion} />
-        <BackgroundGlow dim={isInside} />
-        <ParticleFlecks scattered={isInside} reducedMotion={reducedMotion} />
+        <BackgroundGlow dim={isEnteringOrInside} />
+        <ParticleFlecks scattered={isEnteringOrInside} reducedMotion={reducedMotion} />
         <ChatBubble
           state={state}
           onToggle={onToggle}
@@ -576,6 +760,10 @@ export default function FeatureScene({
           setHovered={setHovered}
           reducedMotion={reducedMotion}
         />
+
+        <FeaturePanels features={features} visible={panelsVisible} reducedMotion={reducedMotion} />
+
+        <InteriorOrbit enabled={isInside} />
       </Suspense>
     </Canvas>
   );

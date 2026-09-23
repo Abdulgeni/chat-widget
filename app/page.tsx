@@ -4,7 +4,7 @@ import Script from 'next/script';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Logo from '../components/Logo';
-import FeatureScene from '../components/FeatureScene';
+import FeatureScene, { type FeatureItem } from '../components/FeatureScene';
 import { staggerContainer, unfoldItem, Parallax } from '../components/Motion';
 import {
   ShieldCheck, Zap, FileText, Lock, Clock, Settings2,
@@ -15,7 +15,7 @@ import Reveal from '../components/Reveal';
 
 type SceneState = 'idle' | 'entering' | 'inside' | 'exiting';
 
-const features = [
+const features: FeatureItem[] = [
   { icon: Lock, title: 'Fully isolated embed', body: 'Shadow DOM keeps every style and script sealed off from the host page.' },
   { icon: Zap, title: 'Real-time streaming', body: 'WebSocket-first with automatic SSE and HTTP fallback.' },
   { icon: FileText, title: 'Document-aware', body: 'Upload a document, ask real questions about it.' },
@@ -234,7 +234,7 @@ export default function Home() {
       </section>
 
       {/* ============================================================
-          INTERACTIVE 3D BUBBLE — click to enter, features inside
+          INTERACTIVE 3D BUBBLE — click to enter, features float inside
           ============================================================ */}
       <section
         id="features"
@@ -281,73 +281,12 @@ export default function Home() {
             <div className="absolute inset-0">
               <FeatureScene
                 state={sceneState}
+                features={features}
                 onToggle={() => {
                   if (sceneState === 'idle') enter();
                 }}
               />
             </div>
-
-            {/* Interior feature grid — visible when inside */}
-            <AnimatePresence>
-              {isInside && (
-                <motion.div
-                  key="interior-features"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 40 }}
-                  transition={
-                    shouldReduceMotion
-                      ? { duration: 0 }
-                      : { duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }
-                  }
-                  className="absolute inset-0 overflow-y-auto px-6 py-16 z-10"
-                  style={{ perspective: '1200px' }}
-                >
-                  <div className="max-w-5xl mx-auto">
-                    <p className="text-center text-[11px] tracking-[0.2em] text-white/40 mb-8">
-                      INSIDE THE BUBBLE
-                    </p>
-
-                    <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="show"
-                      style={{ transformOrigin: 'top center' }}
-                    >
-                      {features.map((f) => {
-                        const IconEl = f.icon;
-                        return (
-                          <motion.div
-                            key={f.title}
-                            variants={unfoldItem}
-                            whileHover={{
-                              y: -6,
-                              transition: { type: 'spring', stiffness: 300, damping: 18 },
-                            }}
-                            className="h-full rounded-xl border border-white/[0.1] bg-white/[0.05] backdrop-blur-md p-6 hover:border-[#ff6363]/40 hover:shadow-[0_12px_40px_rgba(255,99,99,0.18)] transition-colors duration-200"
-                            style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
-                          >
-                            <div
-                              className="w-9 h-9 rounded-lg border border-white/[0.1] bg-[#0d0e11] flex items-center justify-center mb-5 text-[#ff6363]"
-                              style={{ boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}
-                            >
-                              <IconEl className="w-4 h-4" strokeWidth={1.5} />
-                            </div>
-                            <h3 className="text-[14px] font-semibold text-white mb-2">{f.title}</h3>
-                            <p className="text-gray-400 text-[13px] leading-relaxed">{f.body}</p>
-                          </motion.div>
-                        );
-                      })}
-                    </motion.div>
-
-                    <p className="text-center text-[11px] text-white/30 mt-12">
-                      Press ESC or click EXIT to step back out
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Exit button (top-right, only when inside) */}
             <AnimatePresence>

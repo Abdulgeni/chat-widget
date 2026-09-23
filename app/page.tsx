@@ -64,10 +64,10 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handler);
   }, [isInside, exit]);
 
-  // Lock body scroll while inside
+  // Lock body scroll for the whole transition, not just when fully inside
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    if (isInside) {
+    if (sceneState !== 'idle') {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -75,7 +75,7 @@ export default function Home() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isInside]);
+  }, [sceneState]);
 
   return (
     <div className="relative min-h-screen bg-[#08090b] text-gray-200 antialiased overflow-x-hidden selection:bg-violet-500/30 font-sans">
@@ -234,119 +234,119 @@ export default function Home() {
       </section>
 
       {/* ============================================================
-          INTERACTIVE 3D BUBBLE — click to enter, features float inside
+          INTERACTIVE 3D BUBBLE — click to enter, full-screen interior
           ============================================================ */}
       <section
         id="features"
         className="relative max-w-5xl mx-auto px-6 py-24 border-t border-white/[0.06]"
       >
-        {/* Outer dark overlay when entering/inside */}
-        <motion.div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-20"
-          initial={false}
-          animate={{ opacity: isInside || sceneState === 'entering' ? 1 : 0 }}
-          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.7, ease: 'easeOut' }}
-        />
+        <div className="mb-4">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">
+            There&apos;s a reason for every detail.
+          </h2>
+          <p className="text-gray-500 text-sm text-center">
+            Click the bubble to step inside.
+          </p>
+        </div>
 
-        <div className="relative z-30">
-          {/* Section header (hidden when inside) */}
-          <motion.div
-            animate={{ opacity: isInside ? 0 : 1, y: isInside ? -8 : 0 }}
-            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4 }}
-            className="mb-4"
-          >
-            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2 text-center">
-              There&apos;s a reason for every detail.
-            </h2>
-            <p className="text-gray-500 text-sm text-center">
-              Click the bubble to step inside.
-            </p>
-          </motion.div>
+        {/* Small inline preview bubble — always present, this is what you click */}
+        <div className="relative w-full max-w-xl mx-auto h-[340px] rounded-3xl overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent shadow-[0_20px_80px_-20px_rgba(255,99,99,0.25)]">
+          <FeatureScene
+            state="idle"
+            features={features}
+            onToggle={enter}
+          />
 
-          {/* The bubble / interior container */}
-          <motion.div
-            layout
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : { duration: 1.0, ease: [0.16, 1, 0.3, 1] }
-            }
-            animate={{
-              height: isInside ? '85vh' : 340,
-              borderRadius: isInside ? '24px' : '24px',
-            }}
-            className="relative w-full mx-auto overflow-hidden border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent shadow-[0_20px_80px_-20px_rgba(255,99,99,0.25)]"
-          >
-            {/* 3D canvas */}
-            <div className="absolute inset-0">
+          <AnimatePresence>
+            {sceneState === 'idle' && (
+              <motion.div
+                key="hint-idle"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.3 }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+              >
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#ff6363]/30 backdrop-blur-md text-[11px] font-semibold tracking-wider text-zinc-300 shadow-[0_0_24px_rgba(255,99,99,0.2)]"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff6363]" />
+                  <span>CLICK BUBBLE TO ENTER</span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* FULL-SCREEN takeover — mounted only once you're not idle */}
+        <AnimatePresence>
+          {sceneState !== 'idle' && (
+            <motion.div
+              key="fullscreen-interior"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.5, ease: 'easeOut' }}
+              className="fixed inset-0 z-[60] bg-black"
+            >
               <FeatureScene
                 state={sceneState}
                 features={features}
-                onToggle={() => {
-                  if (sceneState === 'idle') enter();
-                }}
+                onToggle={() => {}}
               />
-            </div>
 
-            {/* Exit button (top-right, only when inside) */}
-            <AnimatePresence>
-              {isInside && (
-                <motion.button
-                  key="exit-btn"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3, delay: shouldReduceMotion ? 0 : 0.5 }}
-                  onClick={exit}
-                  className="absolute top-5 right-5 z-30 rounded-full border border-white/15 bg-black/60 backdrop-blur-md px-4 py-1.5 text-[11px] font-semibold tracking-wider text-white/85 hover:text-white hover:border-white/30 transition-all duration-200"
-                >
-                  EXIT ✕
-                </motion.button>
-              )}
-            </AnimatePresence>
+              {/* Exit button */}
+              <motion.button
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3, delay: shouldReduceMotion ? 0 : 0.5 }}
+                onClick={exit}
+                className="absolute top-6 right-6 z-30 rounded-full border border-white/15 bg-black/60 backdrop-blur-md px-4 py-1.5 text-[11px] font-semibold tracking-wider text-white/85 hover:text-white hover:border-white/30 transition-all duration-200"
+              >
+                EXIT ✕
+              </motion.button>
 
-            {/* Idle hint (only when idle) */}
-            <AnimatePresence>
-              {sceneState === 'idle' && (
-                <motion.div
-                  key="hint-idle"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10"
-                >
+              {/* Transitioning label */}
+              <AnimatePresence>
+                {isTransitioning && (
                   <motion.div
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#ff6363]/30 backdrop-blur-md text-[11px] font-semibold tracking-wider text-zinc-300 shadow-[0_0_24px_rgba(255,99,99,0.2)]"
+                    key="transitioning"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none z-10"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff6363]" />
-                    <span>CLICK BUBBLE TO ENTER</span>
+                    <span className="text-[11px] tracking-[0.2em] text-white/50">
+                      {sceneState === 'entering' ? 'ENTERING…' : 'EXITING…'}
+                    </span>
                   </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
 
-            {/* Entering/Exiting micro-label */}
-            <AnimatePresence>
-              {isTransitioning && (
-                <motion.div
-                  key="transitioning"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10"
-                >
-                  <span className="text-[11px] tracking-[0.2em] text-white/50">
-                    {sceneState === 'entering' ? 'ENTERING…' : 'EXITING…'}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+              {/* Drag-to-orbit hint, once fully inside */}
+              <AnimatePresence>
+                {isInside && (
+                  <motion.div
+                    key="orbit-hint"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, delay: 0.8 }}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                  >
+                    <span className="text-[11px] tracking-[0.15em] text-white/40">
+                      DRAG TO LOOK AROUND · ESC TO EXIT
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Showcase */}

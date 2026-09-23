@@ -1,18 +1,24 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Billboard, Text, OrbitControls } from '@react-three/drei';
+import { Billboard, Text, RoundedBox, OrbitControls } from '@react-three/drei';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Group, Mesh, Points } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
-type SceneState = 'idle' | 'entering' | 'inside' | 'exiting';
+export type SceneState = 'idle' | 'entering' | 'inside' | 'exiting';
 
 export interface FeatureItem {
   title: string;
   body: string;
   icon?: unknown;
+}
+
+export interface FeatureSceneProps {
+  state: SceneState;
+  onToggle: () => void;
+  features: FeatureItem[];
 }
 
 function useReducedMotion() {
@@ -43,33 +49,90 @@ function springStep(
   return [next, nextVel] as const;
 }
 
-function CameraRig({ state, reducedMotion }: { state: SceneState; reducedMotion: boolean }) {
+/**
+ * Manages smooth dolly-in when entering the bubble and seamless return when exiting.
+ */
+function CameraRig({
+  state,
+  reducedMotion,
+  controlsRef,
+}: {
+  state: SceneState;
+  reducedMotion: boolean;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}) {
   const { camera } = useThree();
-  const zRef = useRef(5);
-  const zVel = useRef(0);
-  const lookYRef = useRef(0);
-  const lookYVel = useRef(0);
+  const posX = useRef(0);
+  const posY = useRef(0);
+  const posZ = useRef(5);
+  const velX = useRef(0);
+  const velY = useRef(0);
+  const velZ = useRef(0);
+
+  const lookX = useRef(0);
+  const lookY = useRef(0);
+  const lookZ = useRef(0);
+  const velLookX = useRef(0);
+  const velLookY = useRef(0);
+  const velLookZ = useRef(0);
+
+  const prevInside = useRef(false);
 
   useFrame((_, delta) => {
-    if (state === 'inside') return;
-
-    const insideTarget = state === 'entering' ? 0.35 : 5;
-    const lookTarget = state === 'entering' ? -1.2 : 0;
-
-    if (reducedMotion) {
-      zRef.current = insideTarget;
-      lookYRef.current = lookTarget;
-    } else {
-      const [z, zv] = springStep(zRef.current, zVel.current, insideTarget, delta, 6.5, 6.2);
-      zRef.current = z;
-      zVel.current = zv;
-      const [ly, lyv] = springStep(lookYRef.current, lookYVel.current, lookTarget, delta, 6, 6);
-      lookYRef.current = ly;
-      lookYVel.current = lyv;
+    if (state === 'inside') {
+      // Cache current camera coordinates so exiting smoothly interpolates from user's orbit position
+      posX.current = camera.position.x;
+      posY.current = camera.position.y;
+      posZ.current = camera.position.z;
+      velX.current = 0;
+      velY.current = 0;
+      velZ.current = 0;
+      prevInside.current = true;
+      return;
     }
 
-    camera.position.set(0, lookYRef.current * 0.15, zRef.current);
-    camera.lookAt(0, lookYRef.current, zRef.current - 2);
+    if (prevInside.current && state === 'exiting') {
+      prevInside.current = false;
+      if (controlsRef.current) {
+        controlsRef.current.reset();
+      }
+    }
+
+    const targetZ = state === 'entering' ? 1.35 : 5;
+    const targetY = 0;
+    const targetX = 0;
+
+    if (reducedMotion) {
+      posX.current = targetX;
+      posY.current = targetY;
+      posZ.current = targetZ;
+      lookX.current = 0;
+      lookY.current = 0;
+      lookZ.current = 0;
+    } else {
+      const [nx, vx] = springStep(posX.current, velX.current, targetX, delta, 7, 5.6);
+      const [ny, vy] = springStep(posY.current, velY.current, targetY, delta, 7, 5.6);
+      const [nz, vz] = springStep(posZ.current, velZ.current, targetZ, delta, 7, 5.6);
+      posX.current = nx;
+      posY.current = ny;
+      posZ.current = nz;
+      velX.current = vx;
+      velY.current = vy;
+      velZ.current = vz;
+
+      const [lx, vlx] = springStep(lookX.current, velLookX.current, 0, delta, 7, 5.6);
+      const [ly, vly] = springStep(lookY.current, velLookY.current, 0, delta, 7, 5.6);
+      const [lz, vlz] = springStep(lookZ.current, velLookZ.current, 0, delta, 7, 5.6);
+      lookX.current = lx;
+      lookY.current = ly;
+      lookZ.current = lz;
+      velLookX.current = vlx;
+      velLookY.current = vly;
+      velLookZ.current = vlz;
+    }
+
+    camera.position.set(posX.current, posY.current, posZ.current);
+    camera.lookAt(lookX.current, lookY.current, lookZ.current);
   });
 
   return null;
@@ -113,7 +176,7 @@ function BackgroundGlow({ dim }: { dim: boolean }) {
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const pulse = 1.0 + Math.sin(t * 2.0) * 0.12;
-    const target = dim ? 0 : pulse;
+    const target = dim ? 0.12 : pulse;
     glowMat.uniforms.uIntensity.value += (target - glowMat.uniforms.uIntensity.value) * 0.08;
   });
 
@@ -127,7 +190,7 @@ function BackgroundGlow({ dim }: { dim: boolean }) {
 
 function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; reducedMotion: boolean }) {
   const pointsRef = useRef<Points>(null);
-  const count = 26;
+  const count = 32;
   const scatterRef = useRef(0);
   const scatterVel = useRef(0);
 
@@ -149,7 +212,7 @@ function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; redu
         Math.cos(phi) * Math.cos(theta),
         Math.sin(phi) + (Math.random() - 0.5) * 0.4,
         Math.cos(phi) * Math.sin(theta)
-      ).normalize().multiplyScalar(1.6 + Math.random() * 1.4);
+      ).normalize().multiplyScalar(1.8 + Math.random() * 1.5);
 
       const color = coral.clone().lerp(violet, Math.random());
       colors[i * 3] = color.r;
@@ -183,7 +246,7 @@ function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; redu
 
     for (let i = 0; i < count; i++) {
       const p = particles[i];
-      const curTheta = reducedMotion ? p.theta : p.theta + t * p.speed * 0.4;
+      const curTheta = reducedMotion ? p.theta : p.theta + t * p.speed * 0.35;
       const baseR = p.radius + (reducedMotion ? 0 : Math.sin(t * 1.6 + i) * 0.05);
       const bx = baseR * Math.cos(p.phi) * Math.cos(curTheta);
       const by = baseR * Math.sin(p.phi);
@@ -196,13 +259,13 @@ function ParticleFlecks({ scattered, reducedMotion }: { scattered: boolean; redu
     posAttr.needsUpdate = true;
 
     const mat = pointsRef.current.material as THREE.PointsMaterial;
-    mat.opacity = Math.max(0, (1 - scatterRef.current) * 0.45);
+    mat.opacity = Math.max(0.08, (1 - scatterRef.current * 0.7) * 0.45);
   });
 
   return (
     <points ref={pointsRef} geometry={geo}>
       <pointsMaterial
-        size={0.06}
+        size={0.055}
         vertexColors
         transparent
         opacity={0.45}
@@ -255,7 +318,7 @@ function ChatBubble({
   const botGeo = useMemo(() => new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), []);
   const tailGeo = useMemo(() => new THREE.ConeGeometry(0.22, 0.45, 16), []);
   const coreGeo = useMemo(() => new THREE.SphereGeometry(0.38, 32, 32), []);
-  const innerGeo = useMemo(() => new THREE.SphereGeometry(2.6, 48, 32), []);
+  const innerGeo = useMemo(() => new THREE.SphereGeometry(2.7, 48, 32), []);
 
   const coreMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -313,7 +376,7 @@ function ChatBubble({
     if (groupRef.current) {
       if (!reducedMotion) {
         groupRef.current.position.y = isInside ? 0 : Math.sin(t * 1.4) * 0.05;
-        groupRef.current.rotation.y += delta * (isInside ? 0.02 : 0.22);
+        groupRef.current.rotation.y += delta * (isInside ? 0.015 : 0.22);
       } else {
         groupRef.current.position.y = 0;
       }
@@ -334,7 +397,7 @@ function ChatBubble({
       groupRef.current.scale.set(cs, cs, cs);
     }
 
-    const targetTopY = isOpen ? 0.8 : 0;
+    const targetTopY = isInside ? 1.15 : isOpen ? 0.8 : 0;
     if (reducedMotion) topYRef.current = targetTopY;
     else {
       const [y, v] = springStep(topYRef.current, topYVel.current, targetTopY, delta, 10, 5.5);
@@ -346,7 +409,7 @@ function ChatBubble({
       topGroupRef.current.rotation.x = (topYRef.current / 0.8) * -0.28;
     }
 
-    const targetBotY = isOpen ? -0.5 : 0;
+    const targetBotY = isInside ? -0.85 : isOpen ? -0.5 : 0;
     if (reducedMotion) botYRef.current = targetBotY;
     else {
       const [y, v] = springStep(botYRef.current, botYVel.current, targetBotY, delta, 10, 5.5);
@@ -398,7 +461,7 @@ function ChatBubble({
     }
 
     const splitProgress = Math.min(1, Math.max(0, topYRef.current / 0.8));
-    const shellOpacity = THREE.MathUtils.lerp(1.0, 0.28, splitProgress);
+    const shellOpacity = THREE.MathUtils.lerp(1.0, 0.24, splitProgress);
     const emissiveInt = hovered && !isOpen ? 0.25 : 0.12;
 
     if (topMatRef.current) {
@@ -433,11 +496,13 @@ function ChatBubble({
         setHovered(false);
       }}
     >
+      {/* Large invisible hit sphere */}
       <mesh>
         <sphereGeometry args={[1.35, 16, 16]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
+      {/* Top half shell */}
       <group ref={topGroupRef} scale={[1, 0.85, 0.9]}>
         <mesh geometry={topGeo}>
           <meshPhysicalMaterial
@@ -458,6 +523,7 @@ function ChatBubble({
         </mesh>
       </group>
 
+      {/* Bottom half shell */}
       <group ref={bottomGroupRef} scale={[1, 0.85, 0.9]}>
         <mesh geometry={botGeo}>
           <meshPhysicalMaterial
@@ -478,6 +544,7 @@ function ChatBubble({
         </mesh>
       </group>
 
+      {/* Tail */}
       <group ref={tailGroupRef} position={[-0.66, -0.62, 0]} rotation={[0, 0, Math.PI * 0.75]}>
         <mesh geometry={tailGeo}>
           <meshPhysicalMaterial
@@ -494,8 +561,10 @@ function ChatBubble({
         </mesh>
       </group>
 
+      {/* Interior glowing core */}
       <mesh ref={coreMeshRef} geometry={coreGeo} material={coreMaterial} />
 
+      {/* Subtle interior wireframe sphere seen when camera is inside */}
       <group ref={innerShellRef} visible={false}>
         <mesh geometry={innerGeo}>
           <meshBasicMaterial
@@ -514,18 +583,29 @@ function ChatBubble({
   );
 }
 
-function useLayoutPositions(count: number, radius: number) {
+/**
+ * Computes a balanced 3D distribution of the 12 panels wrapped across all three axes.
+ */
+function useLayoutPositions(count: number, radius = 2.15) {
   return useMemo(() => {
     const positions: [number, number, number][] = [];
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.39996 rad
+
     for (let i = 0; i < count; i++) {
-      const y = 1 - (i / Math.max(1, count - 1)) * 2;
-      const r = Math.sqrt(Math.max(0, 1 - y * y));
+      const yNorm = 1 - (i / Math.max(1, count - 1)) * 2; // +1 to -1
+      const y = yNorm * 0.95;
+      const r = Math.sqrt(Math.max(0.18, 1 - yNorm * yNorm * 0.7)) * radius;
       const theta = goldenAngle * i;
-      const jitter = () => (Math.random() - 0.5) * 0.35;
-      const x = Math.cos(theta) * r * radius + jitter();
-      const yy = y * radius * 0.75 - 1.1 + jitter();
-      const z = Math.sin(theta) * r * radius + jitter();
+
+      // Deterministic jitter to break rigid mathematical symmetry
+      const jx = Math.sin(i * 12.9898) * 0.16;
+      const jy = Math.cos(i * 78.233) * 0.12;
+      const jz = Math.sin(i * 45.164) * 0.16;
+
+      const x = Math.cos(theta) * r + jx;
+      const yy = y + jy;
+      const z = Math.sin(theta) * r + jz;
+
       positions.push([x, yy, z]);
     }
     return positions;
@@ -560,27 +640,27 @@ function FeaturePanel({
       setStarted(false);
       return;
     }
-    const delay = reducedMotion ? 0 : index * 70;
+    const delay = reducedMotion ? 0 : 100 + index * 45;
     const timeout = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(timeout);
   }, [visible, index, reducedMotion]);
 
-  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
-  const driftSpeed = useMemo(() => 0.25 + Math.random() * 0.25, []);
+  const phase = useMemo(() => index * 0.52 + Math.PI * 0.25, [index]);
+  const driftSpeed = useMemo(() => 0.38 + (index % 3) * 0.12, [index]);
 
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
-    const target = visible && started ? 1 : 0.0001;
+    const targetScale = visible && started ? 1 : 0.0001;
 
     if (reducedMotion) {
-      scaleRef.current = target;
+      scaleRef.current = targetScale;
     } else {
-      const [s, v] = springStep(scaleRef.current, scaleVel.current, target, delta, 9, 5.5);
+      const [s, v] = springStep(scaleRef.current, scaleVel.current, targetScale, delta, 8.5, 5.4);
       scaleRef.current = s;
       scaleVel.current = v;
     }
 
-    const targetHover = hovered ? 1.12 : 1;
+    const targetHover = hovered ? 1.08 : 1.0;
     if (reducedMotion) {
       hoverRef.current = targetHover;
     } else {
@@ -595,65 +675,89 @@ function FeaturePanel({
 
       if (!reducedMotion) {
         groupRef.current.position.set(
-          position[0] + Math.sin(t * driftSpeed + phase) * 0.12,
-          position[1] + Math.cos(t * driftSpeed * 0.8 + phase) * 0.1,
-          position[2] + Math.sin(t * driftSpeed * 0.6 + phase * 1.3) * 0.12
+          position[0] + Math.sin(t * driftSpeed + phase) * 0.08,
+          position[1] + Math.cos(t * driftSpeed * 0.85 + phase) * 0.07,
+          position[2] + Math.sin(t * driftSpeed * 0.65 + phase * 1.3) * 0.08
         );
       } else {
         groupRef.current.position.set(...position);
       }
     }
+
     if (panelRef.current && !reducedMotion) {
-      panelRef.current.rotation.z = Math.sin(t * 0.3 + phase) * 0.04;
+      panelRef.current.rotation.z = Math.sin(t * 0.35 + phase) * 0.03;
     }
   });
 
   return (
     <group ref={groupRef} position={position}>
-      <Billboard>
+      <Billboard follow lockX={false} lockY={false} lockZ={false}>
         <group
+          ref={panelRef}
           onPointerOver={(e) => {
             e.stopPropagation();
             setHovered(true);
           }}
           onPointerOut={() => setHovered(false)}
         >
-          <mesh ref={panelRef}>
-            <planeGeometry args={[1.5, 0.62]} />
+          {/* Glassmorphic Rounded 3D Tablet */}
+          <RoundedBox args={[1.54, 0.72, 0.025]} radius={0.06} smoothness={4}>
             <meshPhysicalMaterial
-              color={hovered ? '#2a1520' : '#150d12'}
-              transmission={0.35}
-              roughness={0.4}
-              thickness={0.3}
+              color={hovered ? '#1a1020' : '#0c0914'}
+              transmission={0.42}
+              roughness={0.22}
+              thickness={0.35}
               transparent
               opacity={0.88}
               emissive={hovered ? '#ff6363' : '#8b5cf6'}
-              emissiveIntensity={hovered ? 0.18 : 0.06}
+              emissiveIntensity={hovered ? 0.3 : 0.08}
             />
-          </mesh>
-          <lineSegments position={[0, 0, 0.001]}>
-            <edgesGeometry args={[new THREE.PlaneGeometry(1.5, 0.62)]} />
-            <lineBasicMaterial color={hovered ? '#ff6363' : '#ffffff'} transparent opacity={hovered ? 0.6 : 0.12} />
+          </RoundedBox>
+
+          {/* Subtle luminous border outline */}
+          <lineSegments position={[0, 0, 0.015]}>
+            <edgesGeometry args={[new THREE.BoxGeometry(1.54, 0.72, 0.025)]} />
+            <lineBasicMaterial
+              color={hovered ? '#ff6363' : '#a78bfa'}
+              transparent
+              opacity={hovered ? 0.8 : 0.22}
+              depthWrite={false}
+            />
           </lineSegments>
 
+          {/* Feature Number Pill */}
           <Text
-            position={[0, 0.15, 0.01]}
-            fontSize={0.09}
-            color="#ffffff"
-            anchorX="center"
+            position={[-0.62, 0.22, 0.022]}
+            fontSize={0.042}
+            color={hovered ? '#ff8a8a' : '#8b5cf6'}
+            anchorX="left"
             anchorY="middle"
-            maxWidth={1.3}
+            letterSpacing={0.12}
+          >
+            {`// ${(index + 1).toString().padStart(2, '0')}`}
+          </Text>
+
+          {/* Feature Title */}
+          <Text
+            position={[-0.62, 0.09, 0.022]}
+            fontSize={0.076}
+            color="#ffffff"
+            anchorX="left"
+            anchorY="middle"
+            maxWidth={1.24}
           >
             {feature.title}
           </Text>
+
+          {/* Feature Description */}
           <Text
-            position={[0, -0.08, 0.01]}
-            fontSize={0.052}
-            color="#a3a5ab"
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={1.25}
-            lineHeight={1.3}
+            position={[-0.62, -0.11, 0.022]}
+            fontSize={0.048}
+            color={hovered ? '#e2e8f0' : '#9ca3af'}
+            anchorX="left"
+            anchorY="top"
+            maxWidth={1.24}
+            lineHeight={1.35}
           >
             {feature.body}
           </Text>
@@ -672,14 +776,14 @@ function FeaturePanels({
   visible: boolean;
   reducedMotion: boolean;
 }) {
-  const positions = useLayoutPositions(features.length, 1.7);
+  const positions = useLayoutPositions(features.length, 2.15);
   return (
     <group>
       {features.map((f, i) => (
         <FeaturePanel
           key={f.title}
           feature={f}
-          position={positions[i]}
+          position={positions[i] || [0, 0, 0]}
           index={i}
           visible={visible}
           reducedMotion={reducedMotion}
@@ -689,30 +793,38 @@ function FeaturePanels({
   );
 }
 
-function InteriorOrbit({ enabled }: { enabled: boolean }) {
-  const ref = useRef<OrbitControlsImpl>(null);
-
+/**
+ * Interior Orbit Controls allowing the user to rotate camera around the scene.
+ * Clamped pitch prevents disorientation; clamped distance keeps the camera inside the bubble.
+ */
+function InteriorOrbit({
+  enabled,
+  controlsRef,
+}: {
+  enabled: boolean;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}) {
   useEffect(() => {
-    if (ref.current) {
-      ref.current.target.set(0, -1.2, -1.65);
-      ref.current.update();
+    if (controlsRef.current && enabled) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
     }
-  }, [enabled]);
+  }, [enabled, controlsRef]);
 
   return (
     <OrbitControls
-      ref={ref}
+      ref={controlsRef}
       enabled={enabled}
       enablePan={false}
-      enableZoom
-      minDistance={1.2}
-      maxDistance={2.4}
-      minPolarAngle={0.35}
-      maxPolarAngle={Math.PI - 0.35}
-      rotateSpeed={0.5}
-      zoomSpeed={0.6}
-      enableDamping
-      dampingFactor={0.08}
+      enableZoom={true}
+      minDistance={0.7}
+      maxDistance={2.2}
+      minPolarAngle={Math.PI * 0.15}
+      maxPolarAngle={Math.PI * 0.85}
+      rotateSpeed={0.55}
+      zoomSpeed={0.65}
+      enableDamping={true}
+      dampingFactor={0.06}
     />
   );
 }
@@ -721,13 +833,11 @@ export default function FeatureScene({
   state,
   onToggle,
   features,
-}: {
-  state: SceneState;
-  onToggle: () => void;
-  features: FeatureItem[];
-}) {
+}: FeatureSceneProps) {
   const [hovered, setHovered] = useState(false);
   const reducedMotion = useReducedMotion();
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+
   const isInside = state === 'inside';
   const isEnteringOrInside = state === 'inside' || state === 'entering';
   const panelsVisible = state === 'inside' || state === 'entering';
@@ -740,19 +850,26 @@ export default function FeatureScene({
       style={{
         position: 'absolute',
         inset: 0,
-        cursor: hovered && !isEnteringOrInside ? 'pointer' : isInside ? 'grab' : 'default',
+        cursor: isInside ? 'grab' : hovered && !isEnteringOrInside ? 'pointer' : 'default',
         touchAction: 'none',
       }}
     >
       <Suspense fallback={null}>
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.45} />
         <pointLight position={[4, 3, 4]} intensity={4.0} color="#ff6363" />
         <pointLight position={[-4, -2, 2]} intensity={2.5} color="#8b5cf6" />
         <directionalLight position={[0, 2, -4]} intensity={1.8} color="#c084fc" />
 
-        <CameraRig state={state} reducedMotion={reducedMotion} />
+        {/* Smooth camera transitions between idle, enter, and exit */}
+        <CameraRig state={state} reducedMotion={reducedMotion} controlsRef={controlsRef} />
+
+        {/* Soft radial glow behind bubble */}
         <BackgroundGlow dim={isEnteringOrInside} />
+
+        {/* Star-like floating particles that disperse on enter */}
         <ParticleFlecks scattered={isEnteringOrInside} reducedMotion={reducedMotion} />
+
+        {/* Chat bubble that splits open to reveal the interior */}
         <ChatBubble
           state={state}
           onToggle={onToggle}
@@ -761,9 +878,11 @@ export default function FeatureScene({
           reducedMotion={reducedMotion}
         />
 
+        {/* 3D Feature Panels floating inside the bubble */}
         <FeaturePanels features={features} visible={panelsVisible} reducedMotion={reducedMotion} />
 
-        <InteriorOrbit enabled={isInside} />
+        {/* Drag-to-orbit controls active once fully inside */}
+        <InteriorOrbit enabled={isInside} controlsRef={controlsRef} />
       </Suspense>
     </Canvas>
   );
